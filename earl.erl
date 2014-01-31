@@ -1,5 +1,5 @@
 -module(earl).
--export([main/0, connect/0, buffer/0]).
+-export([main/0, connect/0, buffer/0, send/1]).
 
 % Spawns the buffer and the connections processes
 main() ->
@@ -8,6 +8,7 @@ main() ->
 
 % Opens a connectoin to the server
 connect({ok, Socket}) ->
+	register(sendPid, spawn(earl, send, [Socket])),
 	receive_data(Socket);
 connect({error, Reason}) ->
 	io:format("ERROR - Could not connect: ~s~n", [Reason]).
@@ -19,8 +20,8 @@ receive_data(Socket) ->
 	receive
 	    {tcp, Socket, ":irc.cs.ukc.ac.uk NOTICE AUTH :*** Got Ident response\r\n"} ->
 	    	io:format("Loggin' in YOLO!~n", []),
-			send("USER", "Sir_Earl Sir_Earl Sir_Earl Sir_Earl", Socket),
-			send("NICK", "Earl", Socket);
+	    	sendPid ! {"USER", "Sir_Earl Sir_Earl Sir_Earl Sir_Earl"},
+	    	sendPid ! {"NICK", "Earl"};
 	    {tcp, Socket, Bin} -> 
 			bufferPid ! Bin;
 	    {tcp_closed, Socket} ->
@@ -42,15 +43,18 @@ buffer(Buffer)->
 				Cond ->
 					buffer(Buffer ++ [Bin]);
 				true ->
-					io:format("~p~n", Buffer ++ [Bin]),
+					io:format("~s~n", Buffer ++ [Bin]),
 					buffer([])
 			end
 	end.
-
-% For directed messages
-send(Command, Target, Message, Socket) ->
-    ok = gen_tcp:send(Socket, Command ++ " " ++ Target ++ " " ++ Message ++ "\n\r").
-
-% For non-directed server comands, eg NICK and USER
-send(Command, Message, Socket) ->  
-    ok = gen_tcp:send(Socket, Command ++ " " ++ Message ++ "\n\r").
+% new shiny send message box that sends commands to the server
+send(Socket) ->
+	receive
+		{Command, Target, Message} ->
+			M = Command ++ " " ++ Target ++ " " ++ Message ++ "\n\r",
+			ok = gen_tcp:send(Socket, M);
+		{Command, Message} ->
+			M = Command ++ " " ++ Message ++ "\n\r",
+			ok = gen_tcp:send(Socket, M)			
+	end,
+	send(Socket).
