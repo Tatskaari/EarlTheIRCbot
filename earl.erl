@@ -2,8 +2,8 @@
 -export([main/0, connect/0, buffer/0]).
 
 main() ->
-	register(parserPid, spawn(irc, buffer, [])),
-	register(connectPid, spawn(irc, connect, [])).
+	register(bufferPid, spawn(earl, buffer, [])),
+	register(connectPid, spawn(earl, connect, [])).
 
 connect({ok, Socket}) ->
 	receive_data(Socket);
@@ -17,7 +17,7 @@ receive_data(Socket) ->
 		{tcp, Socket, ":irc.cs.ukc.ac.uk NOTICE AUTH :*** No Ident response\r\n"} ->
 			ok = gen_tcp:send(Socket, "USER jfp6 jfp6 jfp6 jfp6\n\rNICK Earl\n\rJOIN #bottesting");
 		{tcp, Socket, Bin} -> 
-			parserPid ! Bin;
+			bufferPid ! Bin;
 		{tcp_closed, Socket} ->
 			io:format("Connection closed.~n",[]),
 			exit(self(), normal);
@@ -28,12 +28,11 @@ receive_data(Socket) ->
 
 buffer() ->
 	buffer([]).
-
 buffer(Buffer)->
 	receive
 		Tmp1 -> Tmp1
 	end,
 
 	Tmp2 = Buffer ++ [Tmp1],
-	io:format("BUGGER: ~s~n", [Tmp2]),
+	io:format("BUGGER: ~p~n", [Tmp2]),
 	buffer(Tmp2).
