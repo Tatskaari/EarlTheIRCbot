@@ -14,18 +14,20 @@ connect() ->
 	
 receive_data(Socket) ->
 	receive
-		{tcp, Socket, ":irc.cs.ukc.ac.uk NOTICE AUTH :*** Got Ident response\r\n"} ->
-			io:format("Loggin in ~n", []),
-			ok = gen_tcp:send(Socket, "USER jfp6 jfp6 jfp6 jfp6\n\rNICK Earl\n\r");
-		{tcp, Socket, Bin} -> 
+	    {tcp, Socket, ":irc.cs.ukc.ac.uk NOTICE AUTH :*** Got Ident response\r\n"} ->
+	    	io:format("Loggin' in YOLO!~n", []),
+			send("USER", "Sir_Earl Sir_Earl Sir_Earl Sir_Earl", Socket),
+			send("NICK", "Earl", Socket);
+	    {tcp, Socket, Bin} -> 
 			bufferPid ! Bin;
-		{tcp_closed, Socket} ->
+	    {tcp_closed, Socket} ->
 			io:format("Connection closed.~n",[]),
 			exit(self(), normal);
 		{send, A} ->
 			gen_tcp:send(Socket, A)
 	end,
 	receive_data(Socket).
+
 buffer() ->
 	buffer([]).
 
@@ -41,3 +43,11 @@ buffer(Buffer)->
 					buffer([])
 			end
 	end.
+
+% For directed messages
+send(Command, Target, Message, Socket) ->
+    ok = gen_tcp:send(Socket, Command ++ " " ++ Target ++ " " ++ Message ++ "\n\r").
+
+% For non-directed server comands, eg NICK and USER
+send(Command, Message, Socket) ->  
+    ok = gen_tcp:send(Socket, Command ++ " " ++ Message ++ "\n\r").
