@@ -14,8 +14,9 @@ connect() ->
 	
 receive_data(Socket) ->
 	receive
-		{tcp, Socket, ":irc.cs.ukc.ac.uk NOTICE AUTH :*** No Ident response\r\n"} ->
-			ok = gen_tcp:send(Socket, "USER jfp6 jfp6 jfp6 jfp6\n\rNICK Earl\n\rJOIN #bottesting");
+		{tcp, Socket, ":irc.cs.ukc.ac.uk NOTICE AUTH :*** Got Ident response\r\n"} ->
+			io:format("Loggin in ~n", []),
+			ok = gen_tcp:send(Socket, "USER jfp6 jfp6 jfp6 jfp6\n\rNICK Earl\n\r");
 		{tcp, Socket, Bin} -> 
 			bufferPid ! Bin;
 		{tcp_closed, Socket} ->
@@ -25,14 +26,18 @@ receive_data(Socket) ->
 			gen_tcp:send(Socket, A)
 	end,
 	receive_data(Socket).
-
 buffer() ->
 	buffer([]).
+
 buffer(Buffer)->
 	receive
-		Tmp1 -> Tmp1
-	end,
-
-	Tmp2 = Buffer ++ [Tmp1],
-	io:format("BUGGER: ~p~n", [Tmp2]),
-	buffer(Tmp2).
+		Bin -> 
+			Cond = string:str(Bin, "\n") == 0,
+			if
+				Cond ->
+					buffer(Buffer ++ [Bin]);
+				true ->
+					io:format("~p~n", Buffer ++ [Bin]),
+					buffer([])
+			end
+	end.
