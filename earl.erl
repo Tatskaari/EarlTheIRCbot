@@ -1,17 +1,20 @@
 -module(earl).
 -export([main/0, connect/0, buffer/0]).
 
+% Spawns the buffer and the connections processes
 main() ->
 	register(bufferPid, spawn(earl, buffer, [])),
 	register(connectPid, spawn(earl, connect, [])).
 
+% Opens a connectoin to the server
 connect({ok, Socket}) ->
 	receive_data(Socket);
 connect({error, Reason}) ->
 	io:format("ERROR - Could not connect: ~s~n", [Reason]).
 connect() ->
 	connect(gen_tcp:connect("irc.cs.kent.ac.uk", 6667, [], 1000)).
-	
+
+% Receives data from the server and passes it to buffer
 receive_data(Socket) ->
 	receive
 	    {tcp, Socket, ":irc.cs.ukc.ac.uk NOTICE AUTH :*** Got Ident response\r\n"} ->
@@ -28,9 +31,9 @@ receive_data(Socket) ->
 	end,
 	receive_data(Socket).
 
+% Builds the messages sent by the server and prints them out
 buffer() ->
 	buffer([]).
-
 buffer(Buffer)->
 	receive
 		Bin -> 
