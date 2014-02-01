@@ -23,7 +23,7 @@ receive_data(Socket) ->
 	    {tcp, Socket, ":irc.cs.ukc.ac.uk NOTICE AUTH :*** Got Ident response\r\n"} ->
 	    	io:format("Loggin' in YOLO!~n", []),
 	    	sendPid ! {command, {"USER", "Sir_Earl Sir_Earl Sir_Earl Sir_Earl"}},
-	    	sendPid ! {command, {"NICK", "Earl"}};
+	    	sendPid ! {command, {"NICK", "Earl2"}};
 	    {tcp, Socket, Bin} -> 
 			bufferPid ! Bin;
 	    {tcp_closed, Socket} ->
