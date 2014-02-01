@@ -8,7 +8,7 @@ parse(SendPid) ->
 		["PING :" ++ T] ->
 		    SendPid ! {command, {"PONG", T}};
 		[T] -> 
-			checkQuit(re:run(T, "PRIVMSG Earl2 :£q"), SendPid)
+			checkQuit(re:run(T, "PRIVMSG Earl2 :#q$"), SendPid)
     end,
     parse(SendPid).
 checkQuit({match,[A]}, SendPid) ->

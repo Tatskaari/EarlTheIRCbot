@@ -12,7 +12,8 @@ main() ->
 			bufferPid ! die,
 			sendPid ! die,
 			parserPid ! die,
-			connectPid ! die
+			connectPid ! die,
+			exit(self(), normal)
 	end.
 
 % Opens a connectoin to the server
@@ -80,13 +81,3 @@ send(Socket) ->
 	end,
 	send(Socket).
 
-%parse() ->                             
-%    receive
-%        ["PING :" ++ T] ->
-%            io:format("PING ~s~n", [T]),
-%	    sendPid ! { "PONG", T };
-%	N ->
-%	    io:format("~s~n", [N])
-%    end,
-%    parse().
-%
