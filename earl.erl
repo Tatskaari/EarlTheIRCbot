@@ -59,7 +59,7 @@ buffer(Buffer)->
 				Cond ->
 					buffer(Buffer ++ [Bin]);
 				true ->
-					io:format("~s~n", Buffer ++ [Bin]),
+					io:format("RECEIVED :: ~s", Buffer ++ [Bin]),
 				    parserPid ! Buffer ++ [Bin],
 					buffer([])
 			end
