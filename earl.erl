@@ -1,14 +1,16 @@
 -module(earl).
 -export([main/0, connect/0, buffer/0, send/1]).
+-import(ircParser, [parse/1]).
 
 % Spawns the buffer and the connections processes
 main() ->
-	register(bufferPid, spawn(earl, buffer, [])),
+	register(bufferPid, spawn(earl, buffer, [])),        
 	register(connectPid, spawn(earl, connect, [])).
 
 % Opens a connectoin to the server
 connect({ok, Socket}) ->
-	register(sendPid, spawn(earl, send, [Socket])),
+	register(sendPid, SendPid = spawn(earl, send, [Socket])),
+        register(parserPid, spawn(ircParser, parse, [SendPid])),
 	receive_data(Socket);
 connect({error, Reason}) ->
 	io:format("ERROR - Could not connect: ~s~n", [Reason]).
@@ -44,17 +46,32 @@ buffer(Buffer)->
 					buffer(Buffer ++ [Bin]);
 				true ->
 					io:format("~s~n", Buffer ++ [Bin]),
+				        parserPid ! Buffer ++ [Bin],
 					buffer([])
 			end
 	end.
+
 % new shiny send message box that sends commands to the server
 send(Socket) ->
 	receive
 		{Command, Target, Message} ->
 			M = Command ++ " " ++ Target ++ " " ++ Message ++ "\n\r",
+		        io:format("~s", [M]),
 			ok = gen_tcp:send(Socket, M);
 		{Command, Message} ->
 			M = Command ++ " " ++ Message ++ "\n\r",
-			ok = gen_tcp:send(Socket, M)			
+		        io:format("~s", [M]),
+			ok = gen_tcp:send(Socket, M)
 	end,
 	send(Socket).
+
+%parse() ->                             
+%    receive
+%        ["PING :" ++ T] ->
+%            io:format("PING ~s~n", [T]),
+%	    sendPid ! { "PONG", T };
+%	N ->
+%	    io:format("~s~n", [N])
+%    end,
+%    parse().
+%
