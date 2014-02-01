@@ -1,6 +1,12 @@
 -module(earl).
--export([main/0, connect/0, buffer/0, send/1]).
+-export([main/0, connect/0, buffer/0, send/1, getLine/1]).
 -import(ircParser, [parse/1]).
+-include_lib("eunit/include/eunit.hrl").
+
+-define(HOSTNAME, "irc.cs.kent.ac.uk").
+-define(PORT, 6667).
+
+
 
 % Spawns the buffer and the connections processes
 main() ->
@@ -22,50 +28,65 @@ main() ->
 % Opens a connectoin to the server
 connect({ok, Socket}) ->
 	register(sendPid, SendPid = spawn(earl, send, [Socket])),
-    register(parserPid, spawn(ircParser, parse, [SendPid])),
+	register(parserPid, spawn(ircParser, parse, [SendPid])),
 	receive_data(Socket);
 connect({error, Reason}) ->
 	io:format("ERROR - Could not connect: ~s~n", [Reason]).
 connect() ->
-	connect(gen_tcp:connect("irc.cs.kent.ac.uk", 6667, [], 1000)).
+	io:format("Connecting to ~s~n", [?HOSTNAME]),
+	connect(gen_tcp:connect(?HOSTNAME, ?PORT, [], 1000)).
 
 % Receives data from the server and passes it to buffer
 receive_data(Socket) ->
 	receive
 		die ->
 			exit(self(), normal);
-	    {tcp, Socket, ":irc.cs.ukc.ac.uk NOTICE AUTH :*** Got Ident response\r\n"} ->
-	    	io:format("Loggin' in YOLO!~n", []),
-	    	sendPid ! {command, {"USER", "Sir_Earl Sir_Earl Sir_Earl Sir_Earl"}},
-	    	sendPid ! {command, {"NICK", "Earl2"}};
 	    {tcp, Socket, Bin} -> 
 			bufferPid ! Bin;
 	    {tcp_closed, Socket} ->
 			io:format("Connection closed.~n",[]),
-			mainPid ! die;
-		{send, A} ->
-			gen_tcp:send(Socket, A)
+			mainPid ! die
 
 	end,
 	receive_data(Socket).
 
+getLine_test() ->
+	?assert(getLine("abc") == {false, "abc"}),
+	?assert(getLine("") == {false, ""}),
+	{A,B,C} = getLine("abc\ndef"),
+	?assert(A == true),
+	?assert(B == "abc"),
+	?assert(C == "def"),
+	{D,E,F} = getLine("abc\n"),
+	?assert(D == true),
+	?assert(E == "abc"),
+	?assert(F == "").
+
+getLine(A) ->
+	Index = string:str(A, "\n"),
+	case Index of
+		0 -> {false, A};
+		_ -> {true, string:substr(A, 1, Index-1), string:substr(A,Index+1)}
+	end.
+
+
+
 % Builds the messages sent by the server and prints them out
 buffer() ->
-	buffer([]).
+	buffer("").
 buffer(Buffer)->
-	receive
-		die ->
-			exit(self(), normal);
-		Bin -> 
-			Cond = string:str(Bin, "\n") == 0,
-			if
-				Cond ->
-					buffer(Buffer ++ [Bin]);
-				true ->
-					io:format("RECEIVED :: ~s", Buffer ++ [Bin]),
-				    parserPid ! Buffer ++ [Bin],
-					buffer([])
-			end
+	case getLine(Buffer) of
+		{false, _ } ->
+			receive
+				die ->
+					exit(self(), normal);
+				Bin -> 
+					buffer(Buffer ++ Bin)
+			end;
+		{true, A, B} ->
+			io:format("RECEIVED :: ~s~n", [A]),
+			parserPid ! A,
+			buffer(B)
 	end.
 
 % new shiny send message box that sends commands to the server
