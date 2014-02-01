@@ -1,5 +1,5 @@
 -module(ircParser).
--export([parse/1]).
+-export([parse/1, lineParse/1]).
 
 % starts passing the message around to the different handlers.
 parse(SendPid) ->
@@ -9,9 +9,23 @@ parse(SendPid) ->
 		["PING :" ++ T] ->
 		    SendPid ! {command, {"PONG", T}};
 		T -> 
-			checkIndentResponce(re:run(T, "NOTICE AUTH :... Got Ident response"), SendPid),
-			checkQuit(re:run(T, "PRIVMSG Earl2 :#q"), SendPid),
-			checkJoin(re:run(T, "PRIVMSG Earl2 :#j"), T, SendPid)
+			Command = string:sub_word(T, 2),
+			if 
+				Command == "PRIVMSG" ->
+					Line = lineParse(T),
+					case Line of
+						[_,_,_,_,"#q"] ->
+							SendPid ! {command, {"QUIT", ":Earl Out!"}};
+						[_,_,_,_,"#j"] -> 
+							SendPid ! {command, {"JOIN", "#cs"}};
+						_Else ->
+							false
+					end;
+				true ->
+					checkIndentResponce(re:run(T, "NOTICE AUTH :... Got Ident response"), SendPid)
+			end
+			%checkQuit(re:run(T, "PRIVMSG Earl2 :#q"), SendPid),
+			%checkJoin(re:run(T, "PRIVMSG Earl2 :#j"), T, SendPid)
     end,
     parse(SendPid).
 
@@ -23,17 +37,10 @@ checkIndentResponce({match, [_]}, SendPid) ->
 checkIndentResponce(_,_) ->
 	false.
 
-% if the command is quit, then quit
-checkQuit({match,[_]}, SendPid) ->
-	SendPid ! {command, {"QUIT", "Earl-Out!"}},
-	true;
-checkQuit(_, _) ->
-	flase.
-
-% if the command is join, then join
-checkJoin({match, [{Start, Length}]}, Message, SendPid) ->
-	Channel = string:sub_string(Message, Start+Length+2),
-	SendPid ! {command, {"JOIN", Channel}},
-	true;
-checkJoin(_, _, _) ->
-	false.
+lineParse(Str) ->
+	From = string:sub_word(string:sub_word(Str, 1, $:), 1, $!),
+	Host = string:sub_word(string:sub_word(Str, 2, $!), 1),
+	Command = string:sub_word(Str, 2),
+	Target = string:sub_word(Str, 3),
+	Message = string:sub_word(Str, 2, $:),
+	[From, Host, Command, Target, Message].
