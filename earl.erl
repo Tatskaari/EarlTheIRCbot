@@ -4,9 +4,12 @@
 
 % Spawns the buffer and the connections processes
 main() ->
+	% Spawn the processes for connecting and building commmands
 	register(bufferPid, spawn(earl, buffer, [])),        
 	register(connectPid, spawn(earl, connect, [])),
 	register(mainPid, self()),
+
+	% Wait until a process wants to kill the program and then tell all processes to an hero 
 	receive
 		die ->
 			bufferPid ! die,

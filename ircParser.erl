@@ -1,6 +1,7 @@
 -module(ircParser).
 -export([parse/1]).
 
+% starts passing the message around to the different handlers.
 parse(SendPid) ->
     receive
     	die ->
@@ -12,13 +13,14 @@ parse(SendPid) ->
 			checkJoin(re:run(T, "PRIVMSG Earl2 :#j"), T, SendPid)
     end,
     parse(SendPid).
-
-checkQuit({match,[A]}, SendPid) ->
+% if the command is quit, then quit
+checkQuit({match,[_]}, SendPid) ->
 	SendPid ! {command, {"QUIT", "Earl Out!"}},
 	true;
 checkQuit(_, _) ->
 	flase.
 
+% if the command is join, then join
 checkJoin({match, [{Start, Length}]}, Message, SendPid) ->
 	Channel = string:sub_string(Message, Start+Length+2),
 	SendPid ! {command, {"JOIN", Channel}},
