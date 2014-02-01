@@ -3,7 +3,9 @@
 
 parse(SendPid) ->
     receive
-	["PING :" ++ T] ->
-	    SendPid ! { "PONG", T }
+		["PING :" ++ T] ->
+		    SendPid ! {command, {"PONG", T}};
+
     end,
     parse(SendPid).
+

@@ -10,7 +10,7 @@ main() ->
 % Opens a connectoin to the server
 connect({ok, Socket}) ->
 	register(sendPid, SendPid = spawn(earl, send, [Socket])),
-        register(parserPid, spawn(ircParser, parse, [SendPid])),
+    register(parserPid, spawn(ircParser, parse, [SendPid])),
 	receive_data(Socket);
 connect({error, Reason}) ->
 	io:format("ERROR - Could not connect: ~s~n", [Reason]).
@@ -46,7 +46,7 @@ buffer(Buffer)->
 					buffer(Buffer ++ [Bin]);
 				true ->
 					io:format("~s~n", Buffer ++ [Bin]),
-				        parserPid ! Buffer ++ [Bin],
+				    parserPid ! Buffer ++ [Bin],
 					buffer([])
 			end
 	end.
@@ -56,11 +56,11 @@ send(Socket) ->
 	receive
 		{command, {Command, Target, Message}} ->
 			M = Command ++ " " ++ Target ++ " " ++ Message ++ "\n\r",
-		        io:format("~s", [M]),
+		    io:format("SENT :: ~s", [M]),
 			ok = gen_tcp:send(Socket, M);
 		{command, {Command, Message}} ->
 			M = Command ++ " " ++ Message ++ "\n\r",
-		        io:format("~s", [M]),
+		    io:format("SENT :: ~s", [M]),
 			ok = gen_tcp:send(Socket, M)
 	end,
 	send(Socket).
