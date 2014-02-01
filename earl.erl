@@ -20,8 +20,8 @@ receive_data(Socket) ->
 	receive
 	    {tcp, Socket, ":irc.cs.ukc.ac.uk NOTICE AUTH :*** Got Ident response\r\n"} ->
 	    	io:format("Loggin' in YOLO!~n", []),
-	    	sendPid ! {"USER", "Sir_Earl Sir_Earl Sir_Earl Sir_Earl"},
-	    	sendPid ! {"NICK", "Earl"};
+	    	sendPid ! {command, {"USER", "Sir_Earl Sir_Earl Sir_Earl Sir_Earl"}},
+	    	sendPid ! {command, {"NICK", "Earl"}};
 	    {tcp, Socket, Bin} -> 
 			bufferPid ! Bin;
 	    {tcp_closed, Socket} ->
@@ -50,10 +50,10 @@ buffer(Buffer)->
 % new shiny send message box that sends commands to the server
 send(Socket) ->
 	receive
-		{Command, Target, Message} ->
+		{command, {Command, Target, Message}} ->
 			M = Command ++ " " ++ Target ++ " " ++ Message ++ "\n\r",
 			ok = gen_tcp:send(Socket, M);
-		{Command, Message} ->
+		{command, {Command, Message}} ->
 			M = Command ++ " " ++ Message ++ "\n\r",
 			ok = gen_tcp:send(Socket, M)			
 	end,
