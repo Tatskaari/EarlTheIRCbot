@@ -3,6 +3,8 @@
 
 parse(SendPid) ->
     receive
+    	die ->
+    		exit(self(), normal);
 		["PING :" ++ T] ->
 		    SendPid ! {command, {"PONG", T}};
 		[T] -> 

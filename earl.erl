@@ -5,7 +5,15 @@
 % Spawns the buffer and the connections processes
 main() ->
 	register(bufferPid, spawn(earl, buffer, [])),        
-	register(connectPid, spawn(earl, connect, [])).
+	register(connectPid, spawn(earl, connect, [])),
+	register(mainPid, self()),
+	receive
+		die ->
+			bufferPid ! die,
+			sendPid ! die,
+			parserPid ! die,
+			connectPid ! die
+	end.
 
 % Opens a connectoin to the server
 connect({ok, Socket}) ->
@@ -20,6 +28,8 @@ connect() ->
 % Receives data from the server and passes it to buffer
 receive_data(Socket) ->
 	receive
+		die ->
+			exit(self(), normal);
 	    {tcp, Socket, ":irc.cs.ukc.ac.uk NOTICE AUTH :*** Got Ident response\r\n"} ->
 	    	io:format("Loggin' in YOLO!~n", []),
 	    	sendPid ! {command, {"USER", "Sir_Earl Sir_Earl Sir_Earl Sir_Earl"}},
@@ -28,9 +38,10 @@ receive_data(Socket) ->
 			bufferPid ! Bin;
 	    {tcp_closed, Socket} ->
 			io:format("Connection closed.~n",[]),
-			exit(self(), normal);
+			mainPid ! die;
 		{send, A} ->
 			gen_tcp:send(Socket, A)
+
 	end,
 	receive_data(Socket).
 
@@ -39,6 +50,8 @@ buffer() ->
 	buffer([]).
 buffer(Buffer)->
 	receive
+		die ->
+			exit(self(), normal);
 		Bin -> 
 			Cond = string:str(Bin, "\n") == 0,
 			if
@@ -54,6 +67,8 @@ buffer(Buffer)->
 % new shiny send message box that sends commands to the server
 send(Socket) ->
 	receive
+		die ->
+			exit(self(), normal);
 		{command, {Command, Target, Message}} ->
 			M = Command ++ " " ++ Target ++ " " ++ Message ++ "\n\r",
 		    io:format("SENT :: ~s", [M]),
