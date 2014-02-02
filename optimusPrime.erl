@@ -1,5 +1,5 @@
 -module(optimusPrime).
--export([starts/1, sendPrimesTo/4]).
+-export([starts/1, sendPrimesTo/4, sendIsPrime/4]).
 
 
 %%% IRC part here, maths below %%%
@@ -11,7 +11,9 @@ starts(SendPid) ->
 			io:format("primePid :: EXIT~n"),
 			exit(self(), normal);
 		[From,_,_,Target,"#primesTo " ++ K] ->
-			spawn(optimusPrime, sendPrimesTo, [K, From, Target, SendPid])				
+			spawn(optimusPrime, sendPrimesTo, [K, From, Target, SendPid]);	
+		[From,_,_,Target,"#isPrime " ++ K] ->
+			spawn(optimusPrime, sendIsPrime, [K, From, Target, SendPid])			
 	end,
 	starts(SendPid).
 
@@ -26,6 +28,24 @@ sendPrimesTo(K, From, Target, SendPid) ->
 					primesTo(N)
 			end,
 			PrintTerm = From ++ ": " ++ io_lib:format("~p",[Primes]),
+			if
+				Target == "Earl2" ->
+					SendPid ! {command, {"PRIVMSG", From, PrintTerm}};
+				true ->
+					SendPid ! {command, {"PRIVMSG", Target, PrintTerm}}
+			end.
+
+sendIsPrime(K, From, Target, SendPid) ->
+	N = listToNum(K),
+			Result = if
+				N<0 ->
+					"Input Error";
+				N>100 ->
+					"Input too large";
+				true ->
+					isPrime(N)
+			end,
+			PrintTerm = From ++ ": " ++ io_lib:format("~p",[Result]),
 			if
 				Target == "Earl2" ->
 					SendPid ! {command, {"PRIVMSG", From, PrintTerm}};
@@ -59,4 +79,14 @@ primesTo(N,T,Primes) ->
 	case sieve(T,Primes) of
 		true -> primesTo(N, T + 2, Primes ++ [T]);
 		_ -> primesTo(N, T + 2, Primes)
+	end.
+
+isPrime(N) ->
+	Primes = primesTo(N),
+	Last = lists:nth(length(Primes), Primes),
+	if 
+		N == Last ->
+			true;
+		true ->
+			false
 	end.
