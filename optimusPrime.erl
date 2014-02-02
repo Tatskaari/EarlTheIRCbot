@@ -40,7 +40,7 @@ sendIsPrime(K, From, Target, SendPid) ->
 			Result = if
 				N<0 ->
 					"Input Error";
-				N>100 ->
+				N>1000000000 ->
 					"Input too large";
 				true ->
 					isPrime(N)
@@ -73,7 +73,7 @@ sieve(N, [_|Tail]) ->
 % uses the seive method to find every prime below the specified number
 primesTo(N) -> 
 	primesTo(N, 3, [2]).
-primesTo(N, T, Primes) when T > N -> 
+primesTo(N, T, Primes) when T > N-> 
 	Primes;
 primesTo(N,T,Primes) -> 
 	case sieve(T,Primes) of
@@ -81,12 +81,18 @@ primesTo(N,T,Primes) ->
 		_ -> primesTo(N, T + 2, Primes)
 	end.
 
-isPrime(N) ->
-	Primes = primesTo(N),
-	Last = lists:nth(length(Primes), Primes),
+%checks to see if A is devisable by anything below it, starting from the bottom. 
+notDevisableBy(A, B) when B>=A -> true;
+notDevisableBy(A, B) ->
 	if 
-		N == Last ->
-			true;
+		A rem B == 0 ->
+			B;
 		true ->
-			false
+			notDevisableBy(A, B+2) %don't need to check even numbers so we increment by 2
 	end.
+
+%is N prime
+isPrime(1) -> false;
+isPrime(2) -> true;
+isPrime(3) -> true;
+isPrime(N) -> notDevisableBy(N, 3).
