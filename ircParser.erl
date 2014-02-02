@@ -4,28 +4,35 @@
 % starts passing the message around to the different handlers.
 parse(SendPid) ->
     receive
-    	die ->
-    		exit(self(), normal);
+		die ->
+			exit(self(), normal);
 		["PING :" ++ T] ->
-		    SendPid ! {command, {"PONG", T}};
+			SendPid ! {command, {"PONG", T}};
 		T -> 
 			Command = string:sub_word(T, 2),
 			if 
+				% If this is a PRIVMSG parse it as one and go through case on types available
 				Command == "PRIVMSG" ->
 					Line = lineParse(T),
+					io:format("~s~n", [Line]),
 					case Line of
-						[_,_,_,_,"#q"] ->
-							SendPid ! {command, {"QUIT", ":Earl Out!"}};
-						[_,_,_,_,"#j"] -> 
-							SendPid ! {command, {"JOIN", "#cs"}};
-						_Else ->
+						% Patern match join command
+						[_,_,_,_,"#j" ++ K] ->
+							SendPid ! {command, {"JOIN", string:strip(K)}};
+
+						% Patern match quit command
+						[_,_,_,_,"#q" ++ K] ->				
+							SendPid ! {command, {"QUIT", ":" ++ string:strip(K)}};
+
+						% Stop dumb errors if the switch case isn't satisfied
+						_Default ->
 							false
 					end;
+
+				% Else
 				true ->
 					checkIndentResponce(re:run(T, "NOTICE AUTH :... Got Ident response"), SendPid)
 			end
-			%checkQuit(re:run(T, "PRIVMSG Earl2 :#q"), SendPid),
-			%checkJoin(re:run(T, "PRIVMSG Earl2 :#j"), T, SendPid)
     end,
     parse(SendPid).
 
