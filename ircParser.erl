@@ -1,6 +1,7 @@
 -module(ircParser).
 -export([start/1, parse/1, lineParse/1]).
 -import(optimusPrime, [starts/1]).
+-include_lib("eunit/include/eunit.hrl").
 
 start(SendPid) ->
 	register(primePid, spawn(optimusPrime, starts, [SendPid])),
@@ -79,6 +80,12 @@ checkIndentResponce({match, [_]}, SendPid) ->
 	true;
 checkIndentResponce(_,_) ->
 	false.
+
+lineParse_test() ->
+	?assertEqual(["CalebDelnay", "calebd@localhost", "PRIVMSG", "#mychannel", "Hello everyone!"] ,lineParse(":CalebDelnay!calebd@localhost PRIVMSG #mychannel :Hello everyone!")),
+	?assertEqual(["CalebDelnay", "calebd@localhost", "QUIT", "Byte bye!"] ,lineParse(":CalebDelnay!calebd@localhost QUIT :Bye bye!")),
+	?assertEqual(["PING", "irc.localhost.localdomain"] ,lineParse("PING :irc.localhost.localdomain")).
+	
 
 lineParse(Str) ->
 	From = string:sub_word(string:sub_word(Str, 1, $:), 1, $!),
