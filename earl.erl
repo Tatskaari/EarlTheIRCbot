@@ -40,6 +40,7 @@ connect() ->
 receive_data(Socket) ->
 	receive
 		die ->
+			io:format("connectPid :: EXIT~n"),
 			exit(self(), normal);
 	    {tcp, Socket, Bin} -> 
 			bufferPid ! Bin;
@@ -78,6 +79,7 @@ buffer(Buffer)->
 		{false, _ } ->
 			receive
 				die ->
+					io:format("bufferPid :: EXIT~n"),
 					exit(self(), normal);
 				Bin -> 
 					buffer(Buffer ++ Bin)
@@ -92,6 +94,7 @@ buffer(Buffer)->
 send(Socket) ->
 	receive
 		die ->
+			io:format("sendPid :: EXIT~n"),
 			exit(self(), normal);
 		{command, {Command, Target, Message}} ->
 			M = Command ++ " " ++ Target ++ " " ++ Message ++ "\n\r",

@@ -23,7 +23,7 @@ parse(SendPid) ->
 
 						% Patern match quit command
 						[_,_,_,_,"#q" ++ K] ->	
-							SendPid ! {command, {"QUIT", ":" ++ string:strip(K)}};
+							SendPid ! {command, {"QUIT", string:strip(K)}};
 
 						% Pattern match part command
 						[_, _, _, _, "#p " ++ K] ->
@@ -34,9 +34,18 @@ parse(SendPid) ->
 							SendPid ! {command, {"NICK", string:strip(K)}};
 
 						% Pattern match time command
-						[_, _, _, Target, "#t " ++ _] ->
-							Time = erlang:time(),
-							Message = lists:flatten(io_lib:format("~p", [Time])),
+						[_, _, _, Target, "#t" ++ _] ->
+							{{Yeart,Montht,Dayt},{Hourt,Mint,Sect}} = erlang:localtime(),
+							IntToString = fun(A) -> lists:flatten(io_lib:format("~p", [A])) end,
+							case Dayt of
+								1 -> DayPrfx = "st";
+								2 -> DayPrfx = "nd";
+								3 -> DayPrfx = "rd";
+								_ -> DayPrfx = "th"
+							end,
+							Month = lists:nth(Montht, ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]),
+							[Hour, Min, Sec, Day, Year] = lists:map(IntToString, [Hourt, Mint, Sect, Dayt, Yeart]),
+							Message = Hour ++ ":" ++ Min ++ ":" ++ Sec ++ ", " ++ Day ++ DayPrfx ++ " of " ++ Month ++ ", " ++ Year,
 							SendPid ! {command, {"PRIVMSG", Target, Message}};		% Send a response back to where it came from.
 
 						% Stop dumb errors if the switch case isn't satisfied
