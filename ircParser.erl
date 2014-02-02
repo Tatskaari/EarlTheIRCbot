@@ -1,17 +1,52 @@
 -module(ircParser).
--export([parse/1]).
+-export([parse/1, lineParse/1]).
 
 % starts passing the message around to the different handlers.
 parse(SendPid) ->
     receive
-    	die ->
-    		exit(self(), normal);
-		["PING :" ++ T] ->
-		    SendPid ! {command, {"PONG", T}};
+		die ->
+			exit(self(), normal);
+		"PING :" ++ T ->
+			io:format("Ping: ~s~n", [T]),
+			SendPid ! {command, {"PONG", T}};
 		T -> 
-			checkIndentResponce(re:run(T, "NOTICE AUTH :... Got Ident response"), SendPid),
-			checkQuit(re:run(T, "PRIVMSG Earl2 :#q"), SendPid),
-			checkJoin(re:run(T, "PRIVMSG Earl2 :#j"), T, SendPid)
+			Command = string:sub_word(T, 2),
+			if 
+				% If this is a PRIVMSG parse it as one and go through case on types available
+				Command == "PRIVMSG" ->
+					Line = lineParse(T),
+					case Line of
+						% Patern match join command
+						[_,_,_,_,"#j " ++ K] ->
+							SendPid ! {command, {"JOIN", string:strip(K)}};
+
+						% Patern match quit command
+						[_,_,_,_,"#q " ++ K] ->				
+							SendPid ! {command, {"QUIT", ":" ++ string:strip(K)}};
+
+						% Pattern match part command
+						[_, _, _, _, "#p " ++ K] ->
+							SendPid ! {command, {"PART", string:strip(K)}};
+
+						% Pattern match nick command
+						[_, _, _, _, "#n " ++ K] ->
+							SendPid ! {command, {"NICK", string:strip(K)}};
+
+						% Pattern match time command
+						[_, _, _, Target, "#t " ++ _] ->
+							Time = erlang:time(),
+							Message = lists:flatten(io_lib:format("~p", [Time])),
+							SendPid ! {command, {"PRIVMSG", Target, Message}};		% Send a response back to where it came from.
+
+						% Stop dumb errors if the switch case isn't satisfied
+						_Default ->
+							false
+					end;
+
+				% Else
+				true ->
+					checkIndentResponce(re:run(T, "NOTICE AUTH :... Got Ident response"), SendPid)
+			end
     end,
     parse(SendPid).
 
@@ -23,17 +58,10 @@ checkIndentResponce({match, [_]}, SendPid) ->
 checkIndentResponce(_,_) ->
 	false.
 
-% if the command is quit, then quit
-checkQuit({match,[_]}, SendPid) ->
-	SendPid ! {command, {"QUIT", "Earl-Out!"}},
-	true;
-checkQuit(_, _) ->
-	flase.
-
-% if the command is join, then join
-checkJoin({match, [{Start, Length}]}, Message, SendPid) ->
-	Channel = string:sub_string(Message, Start+Length+2),
-	SendPid ! {command, {"JOIN", Channel}},
-	true;
-checkJoin(_, _, _) ->
-	false.
+lineParse(Str) ->
+	From = string:sub_word(string:sub_word(Str, 1, $:), 1, $!),
+	Host = string:sub_word(string:sub_word(Str, 2, $!), 1),
+	Command = string:sub_word(Str, 2),
+	Target = string:sub_word(Str, 3),
+	Message = string:sub_word(Str, 2, $:),
+	[From, Host, Command, Target, Message].

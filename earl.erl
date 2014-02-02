@@ -46,9 +46,8 @@ receive_data(Socket) ->
 	    {tcp_closed, Socket} ->
 			io:format("Connection closed.~n",[]),
 			mainPid ! die
-
 	end,
-	receive_data(Socket).
+    receive_data(Socket).
 
 getLine_test() ->
 	?assert(getLine("abc") == {false, "abc"}),
@@ -104,4 +103,3 @@ send(Socket) ->
 			ok = gen_tcp:send(Socket, M)
 	end,
 	send(Socket).
-
