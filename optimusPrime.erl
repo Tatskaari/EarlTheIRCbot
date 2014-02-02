@@ -1,23 +1,23 @@
 -module(optimusPrime).
--export([starts/1, sendPrimesTo/4, sendIsPrime/4]).
+-export([optimusPrime/1, primesTo/4, isPrime/4]).
 
 
 %%% IRC part here, maths below %%%
 
 % the entry point of the porgram
-starts(SendPid) ->
+optimusPrime(SendPid) ->
 	receive
 		die ->
 			io:format("primePid :: EXIT~n"),
 			exit(self(), normal);
 		[From,_,_,Target,"#primesTo " ++ K] ->
-			spawn(optimusPrime, sendPrimesTo, [K, From, Target, SendPid]);	
+			spawn(optimusPrime, primesTo, [K, From, Target, SendPid]);	
 		[From,_,_,Target,"#isPrime " ++ K] ->
-			spawn(optimusPrime, sendIsPrime, [K, From, Target, SendPid])			
+			spawn(optimusPrime, isPrime, [K, From, Target, SendPid])			
 	end,
-	starts(SendPid).
+	optimusPrime(SendPid).
 
-sendPrimesTo(K, From, Target, SendPid) ->
+primesTo(K, From, Target, SendPid) ->
 	N = listToNum(K),
 			Primes = if
 				N<0 ->
@@ -28,14 +28,14 @@ sendPrimesTo(K, From, Target, SendPid) ->
 					primesTo(N)
 			end,
 			PrintTerm = From ++ ": " ++ io_lib:format("~p",[Primes]),
-			if
-				Target == "Earl2" ->
-					SendPid ! {command, {"PRIVMSG", From, PrintTerm}};
-				true ->
-					SendPid ! {command, {"PRIVMSG", Target, PrintTerm}}
+			case Target of
+				"#" ++ _ ->
+					SendPid ! {command, {"PRIVMSG", Target, PrintTerm}};
+				_ ->
+					SendPid ! {command, {"PRIVMSG", From, PrintTerm}}
 			end.
 
-sendIsPrime(K, From, Target, SendPid) ->
+isPrime(K, From, Target, SendPid) ->
 	N = listToNum(K),
 			Result = if
 				N<0 ->
@@ -46,11 +46,11 @@ sendIsPrime(K, From, Target, SendPid) ->
 					isPrime(N)
 			end,
 			PrintTerm = From ++ ": " ++ io_lib:format("~p",[Result]),
-			if
-				Target == "Earl2" ->
-					SendPid ! {command, {"PRIVMSG", From, PrintTerm}};
-				true ->
-					SendPid ! {command, {"PRIVMSG", Target, PrintTerm}}
+			case Target of
+				"#" ++ _ ->
+					SendPid ! {command, {"PRIVMSG", Target, PrintTerm}};
+				_ ->
+					SendPid ! {command, {"PRIVMSG", From, PrintTerm}}
 			end.
 
 
@@ -92,7 +92,9 @@ notDevisableBy(A, B) ->
 	end.
 
 %is N prime
+isPrime(N) when N < 1 -> false;
 isPrime(1) -> false;
 isPrime(2) -> true;
 isPrime(3) -> true;
+isPrime(N) when N rem 2 == 0 -> 2;
 isPrime(N) -> notDevisableBy(N, 3).
