@@ -22,8 +22,13 @@ parse(SendPid) ->
 							SendPid ! {command, {"JOIN", string:strip(K)}};
 
 						% Patern match quit command
+						[_,_,_,_,"#q\r"] ->	
+							SendPid ! {command, {"QUIT", ":Earl Out"}};
+
+						% Patern match quit command
 						[_,_,_,_,"#q" ++ K] ->	
-							SendPid ! {command, {"QUIT", string:strip(K)}};
+							io:format("~p~n", [K]),
+							SendPid ! {command, {"QUIT", ":" ++ K}};
 
 						% Pattern match part command
 						[_, _, _, _, "#p " ++ K] ->
@@ -73,5 +78,5 @@ lineParse(Str) ->
 	Host = string:sub_word(string:sub_word(Str, 2, $!), 1),
 	Command = string:sub_word(Str, 2),
 	Target = string:sub_word(Str, 3),
-	Message = string:sub_word(Str, 2, $:),
+	Message = string:strip(string:sub_word(Str, 2, $:)),
 	[From, Host, Command, Target, Message].
