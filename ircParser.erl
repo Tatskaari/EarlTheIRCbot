@@ -6,7 +6,8 @@ parse(SendPid) ->
     receive
 		die ->
 			exit(self(), normal);
-		["PING :" ++ T] ->
+		"PING :" ++ T ->
+			io:format("Ping: ~s~n", [T]),
 			SendPid ! {command, {"PONG", T}};
 		T -> 
 			Command = string:sub_word(T, 2),
@@ -14,15 +15,28 @@ parse(SendPid) ->
 				% If this is a PRIVMSG parse it as one and go through case on types available
 				Command == "PRIVMSG" ->
 					Line = lineParse(T),
-					io:format("~s~n", [Line]),
 					case Line of
 						% Patern match join command
-						[_,_,_,_,"#j" ++ K] ->
+						[_,_,_,_,"#j " ++ K] ->
 							SendPid ! {command, {"JOIN", string:strip(K)}};
 
 						% Patern match quit command
-						[_,_,_,_,"#q" ++ K] ->				
+						[_,_,_,_,"#q " ++ K] ->				
 							SendPid ! {command, {"QUIT", ":" ++ string:strip(K)}};
+
+						% Pattern match part command
+						[_, _, _, _, "#p " ++ K] ->
+							SendPid ! {command, {"PART", string:strip(K)}};
+
+						% Pattern match nick command
+						[_, _, _, _, "#n " ++ K] ->
+							SendPid ! {command, {"NICK", string:strip(K)}};
+
+						% Pattern match time command
+						[_, _, _, Target, "#t " ++ _] ->
+							Time = erlang:time(),
+							Message = lists:flatten(io_lib:format("~p", [Time])),
+							SendPid ! {command, {"PRIVMSG", Target, Message}};		% Send a response back to where it came from.
 
 						% Stop dumb errors if the switch case isn't satisfied
 						_Default ->

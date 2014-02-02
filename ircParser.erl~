@@ -1,0 +1,8 @@
+-module(ircParser).
+-export([parser/1]).
+
+parse() ->
+    receive
+	"PING :" ++ T ->
+	    sendPid ! { "PONG", T };
+	":" ++ Nick ++ "!"  ->
