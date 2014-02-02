@@ -50,18 +50,6 @@ receive_data(Socket) ->
 	end,
     receive_data(Socket).
 
-getLine_test() ->
-	?assert(getLine("abc") == {false, "abc"}),
-	?assert(getLine("") == {false, ""}),
-	{A,B,C} = getLine("abc\ndef"),
-	?assert(A == true),
-	?assert(B == "abc"),
-	?assert(C == "def"),
-	{D,E,F} = getLine("abc\n"),
-	?assert(D == true),
-	?assert(E == "abc"),
-	?assert(F == "").
-
 getLine(A) ->
 	Index = string:str(A, "\n"),
 	case Index of

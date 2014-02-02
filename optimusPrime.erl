@@ -1,5 +1,5 @@
 -module(optimusPrime).
--export([starts/1]).
+-export([starts/1, sendPrimesTo/4]).
 
 
 %%% IRC part here, maths below %%%
@@ -7,24 +7,32 @@
 % the entry point of the porgram
 starts(SendPid) ->
 	receive
+		die ->
+			io:format("primePid :: EXIT~n"),
+			exit(self(), normal);
 		[From,_,_,Target,"#primesTo " ++ K] ->
-			N = listToNum(K),
+			spawn(optimusPrime, sendPrimesTo, [K, From, Target, SendPid])				
+	end,
+	starts(SendPid).
+
+sendPrimesTo(K, From, Target, SendPid) ->
+	N = listToNum(K),
 			Primes = if
 				N<0 ->
 					"Input Error";
+				N>100 ->
+					"Input too large";
 				true ->
 					primesTo(N)
 			end,
-			PrintTerm =  string:strip(string:strip(io_lib:format("~p",[Primes]), both, $\r), both, $\n),
-			io:format("~p~n", [PrintTerm]),
+			PrintTerm = From ++ ": " ++ io_lib:format("~p",[Primes]),
 			if
 				Target == "Earl2" ->
 					SendPid ! {command, {"PRIVMSG", From, PrintTerm}};
 				true ->
 					SendPid ! {command, {"PRIVMSG", Target, PrintTerm}}
-			end	
-	end,
-	starts(SendPid).
+			end.
+
 
 % takes a string and turns it into an integer
 listToNum(List) ->
@@ -32,13 +40,6 @@ listToNum(List) ->
         {error, _} -> -1;
         {F,_Rest} -> F
     end.
-
-% turns an int into a string so it can be printed
-intToString(A) -> 
-		lists:flatten(io_lib:format("~p", [A])).
-
-
-
 
 %%% MATHS PAST THIS POINT %%%
 % Devides the specified number by evey number below it

@@ -11,9 +11,9 @@ parse(SendPid) ->
     receive
 		die ->
 			io:format("parserPid :: EXIT~n"),
+			primePid ! die,
 			exit(self(), normal);
 		"PING :" ++ T ->
-			io:format("Ping: ~s~n", [T]),
 			SendPid ! {command, {"PONG", T}};
 		T -> 
 			Command = string:sub_word(T, 2),
