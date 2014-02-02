@@ -97,7 +97,7 @@ send(Socket) ->
 			io:format("sendPid :: EXIT~n"),
 			exit(self(), normal);
 		{command, {Command, Target, Message}} ->
-			M = Command ++ " " ++ Target ++ " " ++ Message ++ "\n\r",
+			M = Command ++ " " ++ Target ++ " :" ++ Message ++ "\n\r",
 		    io:format("SENT :: ~s", [M]),
 			ok = gen_tcp:send(Socket, M);
 		{command, {Command, Message}} ->
