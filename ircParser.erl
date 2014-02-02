@@ -1,5 +1,10 @@
 -module(ircParser).
--export([parse/1, lineParse/1]).
+-export([start/1, parse/1, lineParse/1]).
+-import(optimusPrime, [starts/1]).
+
+start(SendPid) ->
+	register(primePid, spawn(optimusPrime, starts, [SendPid])),
+	parse(SendPid).
 
 % starts passing the message around to the different handlers.
 parse(SendPid) ->
@@ -16,6 +21,7 @@ parse(SendPid) ->
 				% If this is a PRIVMSG parse it as one and go through case on types available
 				Command == "PRIVMSG" ->
 					Line = lineParse(T),
+					primePid ! Line,
 					case Line of
 						% Patern match join command
 						[_,_,_,_,"#j " ++ K] ->
