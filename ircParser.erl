@@ -5,6 +5,7 @@
 parse(SendPid) ->
     receive
 		die ->
+			io:format("parserPid :: EXIT~n"),
 			exit(self(), normal);
 		"PING :" ++ T ->
 			io:format("Ping: ~s~n", [T]),
@@ -21,7 +22,7 @@ parse(SendPid) ->
 							SendPid ! {command, {"JOIN", string:strip(K)}};
 
 						% Patern match quit command
-						[_,_,_,_,"#q " ++ K] ->				
+						[_,_,_,_,"#q" ++ K] ->	
 							SendPid ! {command, {"QUIT", ":" ++ string:strip(K)}};
 
 						% Pattern match part command
