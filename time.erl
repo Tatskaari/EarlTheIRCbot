@@ -1,11 +1,13 @@
 -module(time).
 -export([time/1]).
+-include("ircParser.hrl").
 
 time(SendPid) ->
 	receive
 		die ->
 			io:format("timePid :: EXIT~n");
-		[From, _, _, Target, "#t"]  ->
+		% [From, _, _, Target, "#t"]  ->
+		#privmsg{target=Target, from=From, message="#t"++_} ->
 			io:format("TIME :: Got message~n"),
 			{{Yeart,Montht,Dayt},{Hourt,Mint,Sect}} = erlang:localtime(),
 							case Dayt of

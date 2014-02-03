@@ -25,6 +25,7 @@ main() ->
 			exit(self(), normal)
 	end.
 
+
 % Opens a connectoin to the server
 connect({ok, Socket}) ->
 	register(sendPid, SendPid = spawn(earl, send, [Socket])),
@@ -35,6 +36,7 @@ connect({error, Reason}) ->
 connect() ->
 	io:format("Connecting to ~s~n", [?HOSTNAME]),
 	connect(gen_tcp:connect(?HOSTNAME, ?PORT, [], 1000)).
+
 
 % Receives data from the server and passes it to buffer
 receive_data(Socket) ->
@@ -49,6 +51,8 @@ receive_data(Socket) ->
 			mainPid ! die
 	end,
     receive_data(Socket).
+
+
 
 getLine(A) ->
 	Index = string:str(A, "\n"),
@@ -78,6 +82,8 @@ buffer(Buffer)->
 			buffer(B)
 	end.
 
+
+
 % new shiny send message box that sends commands to the server
 send(Socket) ->
 	receive
@@ -85,19 +91,19 @@ send(Socket) ->
 			io:format("sendPid :: EXIT~n"),
 			exit(self(), normal);
 		{command, {Command, Target, Message}} ->
-			M = Command ++ " " ++ Target ++ " :" ++ Message ++ "\n\r",
+			M = Command ++ " " ++ Target ++ " :" ++ Message ++ "\r\n",
 		    io:format("SENT :: ~s", [M]),
 			ok = gen_tcp:send(Socket, M);
 		{command, {Command, Message}} ->
-			M = Command ++ " " ++ Message ++ "\n\r",
+			M = Command ++ " " ++ Message ++ "\r\n",
 		    io:format("SENT :: ~s", [M]),
 			ok = gen_tcp:send(Socket, M);
 		{prvmsg, {From, Target, Message}} ->
 			io:format("Got prvmsg~n"),
 			case Target of
-				"#" ++ _ ->
+				"#" ++ _Channel ->
 					sendPid ! {command, {"PRIVMSG", Target, Message}};
-				_ ->
+				_UserName ->
 					sendPid ! {command, {"PRIVMSG", From, Message}}
 			end
 	end,

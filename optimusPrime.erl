@@ -1,22 +1,24 @@
 -module(optimusPrime).
 -export([optimusPrime/1, primesTo/4, isPrime/4]).
 
+%Contains the record definitions
+-include("ircParser.hrl").
 
 %%% IRC part here, maths below %%%
-
-% the entry point of the porgram
 optimusPrime(SendPid) ->
 	receive
 		die ->
-			io:format("primePid :: EXIT~n"),
+			io:format("~s :: EXIT~n", [self()]),
 			exit(self(), normal);
-		[From,_,_,Target,"#primesTo " ++ K] ->
+		#privmsg{target=Target, from=From, message="#primesTo " ++ K} ->
 			spawn(optimusPrime, primesTo, [K, From, Target, SendPid]);	
-		[From,_,_,Target,"#isPrime " ++ K] ->
-			spawn(optimusPrime, isPrime, [K, From, Target, SendPid])			
+		#privmsg{target=Target, from=From, message="#isPrime " ++ K} ->
+			spawn(optimusPrime, isPrime, [K, From, Target, SendPid])
 	end,
 	optimusPrime(SendPid).
 
+
+% The entry point of the porgram
 primesTo(K, From, Target, SendPid) ->
 	N = listToNum(K),
 			Primes = if
