@@ -91,6 +91,14 @@ send(Socket) ->
 		{command, {Command, Message}} ->
 			M = Command ++ " " ++ Message ++ "\n\r",
 		    io:format("SENT :: ~s", [M]),
-			ok = gen_tcp:send(Socket, M)
+			ok = gen_tcp:send(Socket, M);
+		{prvmsg, {From, Target, Message}} ->
+			io:format("Got prvmsg~n"),
+			case Target of
+				"#" ++ _ ->
+					sendPid ! {command, {"PRIVMSG", Target, Message}};
+				_ ->
+					sendPid ! {command, {"PRIVMSG", From, Message}}
+			end
 	end,
 	send(Socket).
