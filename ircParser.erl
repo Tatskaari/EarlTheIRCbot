@@ -1,10 +1,12 @@
 -module(ircParser).
 -export([start/1, parse/1, lineParse/1]).
--import(optimusPrime, [starts/1]).
+-import(optimusPrime, [optimusPrime/1]).
+-import(time, [time/1]).
 -include_lib("eunit/include/eunit.hrl").
 
 start(SendPid) ->
-	register(primePid, spawn(optimusPrime, starts, [SendPid])),
+	register(primePid, spawn(optimusPrime, optimusPrime, [SendPid])),
+	register(timePid, spawn(time, time, [SendPid])),
 	parse(SendPid).
 
 % starts passing the message around to the different handlers.
@@ -23,6 +25,7 @@ parse(SendPid) ->
 				Command == "PRIVMSG" ->
 					Line = lineParse(T),
 					primePid ! Line,
+					timePid ! Line,
 					case Line of
 						% Patern match join command
 						[_,_,_,_,"#j " ++ K] ->
@@ -44,22 +47,6 @@ parse(SendPid) ->
 						% Pattern match nick command
 						[_, _, _, _, "#n " ++ K] ->
 							SendPid ! {command, {"NICK", string:strip(K)}};
-
-						% Pattern match time command
-						[_, _, _, Target, "#t" ++ _] ->
-							{{Yeart,Montht,Dayt},{Hourt,Mint,Sect}} = erlang:localtime(),
-							case Dayt of
-								1 -> DayPrfx = "st";
-								2 -> DayPrfx = "nd";
-								3 -> DayPrfx = "rd";
-								_ -> DayPrfx = "th"
-							end,
-							
-							Month = lists:nth(Montht, ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]), 
-							IntToString = fun(A) -> lists:flatten(io_lib:format("~p", [A])) end, % converts the numbers from 5 -> "5"
-							[Hour, Min, Sec, Day, Year] = lists:map(IntToString, [Hourt, Mint, Sect, Dayt, Yeart]), % aplies IntToString to each element in the list
-							Message = Hour ++ ":" ++ Min ++ ":" ++ Sec ++ ", " ++ Day ++ DayPrfx ++ " of " ++ Month ++ ", " ++ Year,
-							SendPid ! {command, {"PRIVMSG", Target, Message}};
 
 						% Stop dumb errors if the switch case isn't satisfied
 						_Default ->
