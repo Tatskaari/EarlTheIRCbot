@@ -2,11 +2,8 @@
 -export([start/1, parse/1, lineParse/1]).
 -import(optimusPrime, [optimusPrime/1]).
 -import(time, [time/1]).
-<<<<<<< HEAD
-
-=======
 -import(telnet, [telnet/1]).
->>>>>>> 2640a81b152c1398d6d89a1fa3f6d099ba4a045c
+
 -include_lib("eunit/include/eunit.hrl").
 -include("ircParser.hrl").
 
