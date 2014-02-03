@@ -74,7 +74,8 @@ checkIndentResponce(_,_) ->
 	false.
 
 lineParse_privmsg_test() ->
-	?assertEqual(["CalebDelnay", "calebd@localhost", "PRIVMSG", "#mychannel", "Hello everyone!"] ,lineParse(":CalebDelnay!calebd@localhost PRIVMSG #mychannel :Hello everyone!")).
+	?assertEqual(["CalebDelnay", "calebd@localhost", "PRIVMSG", "#mychannel", "Hello everyone!"] ,lineParse(":CalebDelnay!calebd@localhost PRIVMSG #mychannel :Hello everyone!")),
+	?assertEqual(["Mex", "~a@a.kent.ac.uk", "PRIVMSG", "#bottestting", ":"], lineParse(":Mex!~a@a.kent.ac.uk PRIVMSG #bottesting ::")).
 
 lineParse_quit_test() ->
 	?assertEqual(["CalebDelnay", "calebd@localhost", "QUIT", "Byte bye!"] ,lineParse(":CalebDelnay!calebd@localhost QUIT :Bye bye!")).
@@ -84,7 +85,35 @@ lineParse_ping_test() ->
 
 lineParse_mode_test() ->
 	?assertEqual(["CalebDelnay", "calebd@localhost", "MODE", "#mychannel", "-l"], lineParse(":CalebDelnay!calebd@localhost MODE #mychannel -l")).
-	
+
+
+getPrefix_test() ->
+	?assertEqual({true, "a", "b"}, getPrefix(":a b")),
+	?assertEqual({true, "a", "b"}, getPrefix(":a     b")),
+	?assertEqual({false, "", "b"}, getPrefix("b")).
+
+getPrefix(":" ++ Str) ->
+	SpaceIndex = string:str(Str, " "),
+	Prefix = string:substr(Str, 1, SpaceIndex-1),
+	Rest = string:strip(string:substr(Str, SpaceIndex), left),
+	{true, Prefix, Rest};
+getPrefix(Str) -> {false, "", Str}.
+
+
+getTrail_test() ->
+	{true, _, Rest} = getPrefix(":Mex!~a@a.kent.ac.uk PRIVMSG #bottesting : :"),
+	?assertEqual({true, " :", "PRIVMSG #bottesting"}, getTrail(Rest)).
+
+getTrail(Str) ->
+	Index = string:str(Str, " :"),
+	case Index of
+		0 -> {false, "", Str};
+		_ ->
+			io:format("Index: ~p~n", [Index]),
+			Rest = string:strip(string:substr(Str, 1, Index)),
+			Trail = string:substr(Str, Index + 2),
+			{true, Trail, Rest}
+	end.
 
 lineParse(Str) ->
 	From = string:sub_word(string:sub_word(Str, 1, $:), 1, $!),
