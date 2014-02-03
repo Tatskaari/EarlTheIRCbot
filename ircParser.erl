@@ -1,5 +1,6 @@
 -module(ircParser).
--export([start/1, parse/1, lineParse/1]).
+%-export([start/1, parse/1, lineParse/1]).
+-compile(export_all).
 -import(optimusPrime, [starts/1]).
 -include_lib("eunit/include/eunit.hrl").
 
@@ -82,15 +83,53 @@ checkIndentResponce(_,_) ->
 	false.
 
 lineParse_test() ->
-	?assertEqual(["CalebDelnay", "calebd@localhost", "PRIVMSG", "#mychannel", "Hello everyone!"] ,lineParse(":CalebDelnay!calebd@localhost PRIVMSG #mychannel :Hello everyone!")),
-	?assertEqual(["CalebDelnay", "calebd@localhost", "QUIT", "Byte bye!"] ,lineParse(":CalebDelnay!calebd@localhost QUIT :Bye bye!")),
-	?assertEqual(["PING", "irc.localhost.localdomain"] ,lineParse("PING :irc.localhost.localdomain")).
-	
+	%?assertEqual({message, {"CalebDelnay", "calebd@localhost", "PRIVMSG", "#mychannel", "Hello everyone!"}} ,lineParse(":CalebDelnay!calebd@localhost PRIVMSG #mychannel :Hello everyone!")),
+	?assertEqual({quit, {"CalebDelnay", "calebd@localhost", "QUIT", "Bye bye!"}} ,lineParse(":CalebDelnay!calebd@localhost QUIT :Bye bye!")),
+	?assertEqual({server_command, {"PING", "irc.localhost.localdomain"}} ,lineParse("PING :irc.localhost.localdomain")).
+
 
 lineParse(Str) ->
-	From = string:sub_word(string:sub_word(Str, 1, $:), 1, $!),
-	Host = string:sub_word(string:sub_word(Str, 2, $!), 1),
-	Command = string:sub_word(Str, 2),
-	Target = string:sub_word(Str, 3),
-	Message = string:strip(string:strip(string:sub_word(Str, 2, $:)), both, $\r),
-	[From, Host, Command, Target, Message].
+	NumberOfWords = string:words(Str),
+	if 
+		NumberOfWords < 3  ->
+			parseActionServerCmd(Str);
+		NumberOfWords > 2 ->
+			parseUserMessage(Str)
+	end.
+
+
+
+parseActionServerCmd(Str) ->
+	Command = string:sub_word(Str, 1),
+	Data = string:sub_word(Str, 2, $:),
+	{server_command, {Command, Data}}.
+
+parseUserMessage(Str) ->
+	Commands = string:sub_word(Str, 1, $:),
+	
+	User = string:sub_word(Commands, 1, $!),
+	Host = string:sub_word(string:sub_word(Commands, 2, $!), 1),
+	Command = sting:sub_word(Str, 2),
+	CommandsLength = string:len(Commands),
+
+	Message = string:substr(Str, CommandsLength + 2),
+
+	CommandsLength = string:words(Commands),
+	if
+		CommandsLength == 3 ->
+			% Targeted message
+			Target = Command = sting:sub_word(Str, 3),
+			{message, {User, Host, Command, Target, Message}};
+		CommandsLength == 2 ->
+			% Non-targetted message
+			{message, {User, Host, Command, Message}}
+	end,
+	{error, {}}.
+	
+
+%	From = string:sub_word(string:sub_word(Str, 1, $:), 1, $!),
+%	Host = string:sub_word(string:sub_word(Str, 2, $!), 1),
+%	Command = string:sub_word(Str, 2),
+%	Target = string:sub_word(Str, 3),
+%	Message = string:strip(string:strip(string:sub_word(Str, 2, $:)), both, $\r),
+%	[From, Host, Command, Target, Message].
