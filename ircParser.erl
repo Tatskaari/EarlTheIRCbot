@@ -2,11 +2,13 @@
 -export([start/1, parse/1, lineParse/1]).
 -import(optimusPrime, [optimusPrime/1]).
 -import(time, [time/1]).
+-import(telnet, [telnet/1]).
 -include_lib("eunit/include/eunit.hrl").
 
 start(SendPid) ->
 	register(primePid, spawn(optimusPrime, optimusPrime, [SendPid])),
 	register(timePid, spawn(time, time, [SendPid])),
+	register(telnetPid, spawn(telnet, telnet, [SendPid])),
 	parse(SendPid).
 
 % starts passing the message around to the different handlers.
@@ -15,6 +17,8 @@ parse(SendPid) ->
 		die ->
 			io:format("parserPid :: EXIT~n"),
 			primePid ! die,
+			timePid ! die,
+			telnetPid ! die,
 			exit(self(), normal);
 		"PING :" ++ T ->
 			SendPid ! {command, {"PONG", T}};
@@ -26,6 +30,7 @@ parse(SendPid) ->
 					Line = lineParse(T),
 					primePid ! Line,
 					timePid ! Line,
+					telnetPid ! Line,
 					case Line of
 						% Patern match join command
 						[_,_,_,_,"#j " ++ K] ->

@@ -4,8 +4,9 @@
 time(SendPid) ->
 	receive
 		die ->
-			io:format("timePid :: EXIT");
-		[From, _, _, Target, "#t" ++ _]  ->
+			io:format("timePid :: EXIT~n");
+		[From, _, _, Target, "#t"]  ->
+			io:format("TIME :: Got message~n"),
 			{{Yeart,Montht,Dayt},{Hourt,Mint,Sect}} = erlang:localtime(),
 							case Dayt of
 								1 -> DayPrfx = "st";
@@ -18,11 +19,6 @@ time(SendPid) ->
 							IntToString = fun(A) -> lists:flatten(io_lib:format("~p", [A])) end, % converts the numbers from 5 -> "5"
 							[Hour, Min, Sec, Day, Year] = lists:map(IntToString, [Hourt, Mint, Sect, Dayt, Yeart]), % aplies IntToString to each element in the list
 							Message = From ++ ": " ++ Hour ++ ":" ++ Min ++ ":" ++ Sec ++ ", " ++ Day ++ DayPrfx ++ " of " ++ Month ++ ", " ++ Year,
-							case Target of
-								"#" ++ _ ->
-									SendPid ! {command, {"PRIVMSG", Target, Message}};
-								_ ->
-									SendPid ! {command, {"PRIVMSG", From, Message}}
-							end
+							SendPid ! {prvmsg, {From, Target, Message}}
 	end,
 	time(SendPid).
