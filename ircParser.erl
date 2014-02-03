@@ -2,12 +2,18 @@
 -export([start/1, parse/1, lineParse/1]).
 -import(optimusPrime, [optimusPrime/1]).
 -import(time, [time/1]).
+<<<<<<< HEAD
 
+=======
+-import(telnet, [telnet/1]).
+>>>>>>> 2640a81b152c1398d6d89a1fa3f6d099ba4a045c
 -include_lib("eunit/include/eunit.hrl").
+-include("ircParser.hrl").
 
 start(SendPid) ->
 	register(primePid, spawn(optimusPrime, optimusPrime, [SendPid])),
 	register(timePid, spawn(time, time, [SendPid])),
+	register(telnetPid, spawn(telnet, telnet, [SendPid])),
 	parse(SendPid).
 
 % starts passing the message around to the different handlers.
@@ -16,6 +22,8 @@ parse(SendPid) ->
 		die ->
 			io:format("parserPid :: EXIT~n"),
 			primePid ! die,
+			timePid ! die,
+			telnetPid ! die,
 			exit(self(), normal);
 		"PING :" ++ T ->
 			SendPid ! {command, {"PONG", T}};
@@ -27,6 +35,7 @@ parse(SendPid) ->
 					Line = lineParse(T),
 					primePid ! Line,
 					timePid ! Line,
+					telnetPid ! Line,
 					case Line of
 						% Patern match join command
 						[_,_,_,_,"#j " ++ K] ->
@@ -69,18 +78,68 @@ checkIndentResponce({match, [_]}, SendPid) ->
 checkIndentResponce(_,_) ->
 	false.
 
+
+
+getPrefix_test() ->
+	?assertEqual({true, "a", "b"}, getPrefix(":a b")),
+	?assertEqual({true, "a", "b"}, getPrefix(":a     b")),
+	?assertEqual({false, "", "b"}, getPrefix("b")).
+
+getPrefix(":" ++ Str) ->
+	SpaceIndex = string:str(Str, " "),
+	Prefix = string:substr(Str, 1, SpaceIndex-1),
+	Rest = string:strip(string:substr(Str, SpaceIndex), left),
+	{true, Prefix, Rest};
+getPrefix(Str) -> {false, "", Str}.
+
+
+getTrail_test() ->
+	{true, _, Rest} = getPrefix(":Mex!~a@a.kent.ac.uk PRIVMSG #bottesting : :"),
+	?assertEqual({true, " :", "PRIVMSG #bottesting"}, getTrail(Rest)),
+	{true, _, Rest} = getPrefix(":Mex!~a@a.kent.ac.uk PRIVMSG #bottesting : :"),
+	?assertEqual({true, " :", "PRIVMSG #bottesting"}, getTrail(Rest)).
+
+getTrail(Str) ->
+	Index = string:str(Str, " :"),
+	case Index of
+		0 -> {false, "", Str};
+		_ ->
+			io:format("Index: ~p~n", [Index]),
+			Rest = string:strip(string:substr(Str, 1, Index)),
+			Trail = string:substr(Str, Index + 2),
+			{true, Trail, Rest}
+	end.
+
+getCommand_test() ->
+	?assertEqual({"PRIVMSG", ["#bottesting"]}, getCommand("PRIVMSG #bottesting")).
+
+getCommand(Str) ->
+	Tokens = string:tokens(Str, " "),
+	[Command|Params] = Tokens,
+	{Command, Params}.
+
 lineParse_privmsg_test() ->
-	?assertEqual(["CalebDelnay", "calebd@localhost", "PRIVMSG", "#mychannel", "Hello everyone!"] ,lineParse(":CalebDelnay!calebd@localhost PRIVMSG #mychannel :Hello everyone!")).
+	?assertEqual(#privmsg{message="Hello everyone!", target="#mychannel"} ,lineParse2(":CalebDelnay!calebd@localhost PRIVMSG #mychannel :Hello everyone!")),
+	?assertEqual(#privmsg{message=":", target="#bottesting"}, lineParse2(":Mex!~a@a.kent.ac.uk PRIVMSG #bottesting ::")).
 
-lineParse_quit_test() ->
-	?assertEqual(["CalebDelnay", "calebd@localhost", "QUIT", "Byte bye!"] ,lineParse(":CalebDelnay!calebd@localhost QUIT :Bye bye!")).
-
+%lineParse_quit_test() ->
+%	?assertEqual(["CalebDelnay", "calebd@localhost", "QUIT", "Byte bye!"] ,lineParse(":CalebDelnay!calebd@localhost QUIT :Bye bye!")).
+%
 lineParse_ping_test() ->
-	?assertEqual(["PING", "irc.localhost.localdomain"] ,lineParse("PING :irc.localhost.localdomain")).
+	?assertEqual(#ping{nonce="irc.localhost.localdomain"} ,lineParse2("PING :irc.localhost.localdomain")).
+%
+%lineParse_mode_test() ->
+%	?assertEqual(["CalebDelnay", "calebd@localhost", "MODE", "#mychannel", "-l"], lineParse(":CalebDelnay!calebd@localhost MODE #mychannel -l")).
 
-lineParse_mode_test() ->
-	?assertEqual(["CalebDelnay", "calebd@localhost", "MODE", "#mychannel", "-l"], lineParse(":CalebDelnay!calebd@localhost MODE #mychannel -l")).
-	
+lineParse2(Str) ->
+	{HasPrefix, Prefix, Rest} = getPrefix(Str),
+	{HasTrail, Trail, CommandsAndParams} = getTrail(Rest),
+	{Command, Params} = getCommand(CommandsAndParams),
+	case Command of
+		"PRIVMSG" -> #privmsg{target=lists:nth(1, Params), message=Trail};
+		"PING" -> #ping{nonce=Trail}
+	end.
+
 
 
 lineParse(Str) ->
