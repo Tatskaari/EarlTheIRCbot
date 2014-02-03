@@ -5,8 +5,8 @@
 -import(telnet, [telnet/1]).
 -include_lib("eunit/include/eunit.hrl").
 
--define(NICK, "Earl3").
--define(USER, "Simon Sir_Earl Sir_Earl Sir_Earl").
+-define(NICK, "Earl").
+-define(USER, "Tatskaari Sir_Earl Sir_Earl Sir_Earl").
 
 %Contains the record definitions
 -include("ircParser.hrl").
@@ -49,8 +49,12 @@ parse(SendPid) ->
 					primePid ! Line;
 
 				% Time (#t)
-				#privmsg{message="#t" ++ _} ->
+				#privmsg{message="#t"} ->
 					timePid ! Line;
+
+				% Telnet (#telnet)
+				#privmsg{message="#telnet"} ->
+					telnetPid ! Line;
 
 				% Ping
 				#ping{nonce=K} ->

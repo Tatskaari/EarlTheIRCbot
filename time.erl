@@ -7,7 +7,7 @@ time(SendPid) ->
 		die ->
 			io:format("timePid :: EXIT~n");
 		% [From, _, _, Target, "#t"]  ->
-		#privmsg{target=Target, from=From, message="#t"++_} ->
+		#privmsg{target=Target, from=From, message="#t"} ->
 			io:format("TIME :: Got message~n"),
 			{{Yeart,Montht,Dayt},{Hourt,Mint,Sect}} = erlang:localtime(),
 							case Dayt of

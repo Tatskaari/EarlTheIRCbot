@@ -49,9 +49,9 @@ isPrime(K, From, Target, SendPid) ->
 			end,
 			if
 				Result == true ->
-					PrintTerm = From ++ ": " ++ K ++ " is prime";
+					PrintTerm = From ++ ": " ++ N ++ " is prime";
 				true ->
-					PrintTerm = From ++ ": " ++ K ++ " is devisable by " ++ io_lib:format("~p",[Result])
+					PrintTerm = From ++ ": " ++ N ++ " is devisable by " ++ io_lib:format("~p",[Result])
 			end,
 			case Target of
 				"#" ++ _ ->
