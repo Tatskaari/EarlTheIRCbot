@@ -45,7 +45,12 @@ isPrime(K, From, Target, SendPid) ->
 				true ->
 					isPrime(N)
 			end,
-			PrintTerm = From ++ ": " ++ io_lib:format("~p",[Result]),
+			if
+				Result == true ->
+					PrintTerm = From ++ ": " ++ K ++ " is prime";
+				true ->
+					PrintTerm = From ++ ": " ++ K ++ " is devisable by " ++ io_lib:format("~p",[Result])
+			end,
 			case Target of
 				"#" ++ _ ->
 					SendPid ! {command, {"PRIVMSG", Target, PrintTerm}};
