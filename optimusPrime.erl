@@ -53,12 +53,8 @@ isPrime(K, From, Target, SendPid) ->
 				true ->
 					PrintTerm = From ++ ": " ++ N ++ " is devisable by " ++ io_lib:format("~p",[Result])
 			end,
-			case Target of
-				"#" ++ _ ->
-					SendPid ! {command, {"PRIVMSG", Target, PrintTerm}};
-				_ ->
-					SendPid ! {command, {"PRIVMSG", From, PrintTerm}}
-			end.
+			SendPid ! {command, {"PRIVMSG", Target, PrintTerm}}.
+
 
 
 % takes a string and turns it into an integer
