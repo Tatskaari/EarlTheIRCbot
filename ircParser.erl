@@ -11,6 +11,7 @@
 %Contains the record definitions
 -include("ircParser.hrl").
 
+
 start(SendPid) ->
 	register(primePid, spawn(optimusPrime, optimusPrime, [SendPid])),
 	register(timePid, spawn(time, time, [SendPid])),
@@ -29,16 +30,15 @@ parse(SendPid) ->
 			exit(self(), normal);
 		T->
 			Line = lineParse(T),
+
+			% Commands which don't need admin
 			case Line of
 				% Join (#j)
 				#privmsg{message="#j " ++ K} ->
 					io:format("~p~n", [K]),
 					SendPid ! {command, {"JOIN", K}};
 				
-				% Quit (#q [reason])
-				#privmsg{message="#q" ++ K} ->
-					io:format("~p~n", [K]),
-					SendPid ! {command, {"QUIT", ":" ++ K}};
+
 
 				% Is Prime Number (#isPrime <num>)
 				#privmsg{message="#isPrime" ++ _K} ->
@@ -56,7 +56,7 @@ parse(SendPid) ->
 				#ping{nonce=K} ->
 					SendPid ! {command, {"PONG", K}};
 
-				_Match -> false % We don't know about everything - let's not deal with it.
+				_Default -> false % We don't know about everything - let's not deal with it.
 			end,
 		checkIndentResponce(re:run(T, "NOTICE AUTH :... Got Ident response"), SendPid)
     end,
@@ -89,7 +89,7 @@ getTrail(Str) ->
 		_ ->
 			% io:format("Index: ~p~n", [Index]),
 			Rest = string:strip(string:substr(Str, 1, Index)),
-			Trail = string:substr(Str, Index + 2),
+			Trail = string:strip(string:strip(string:substr(Str, Index + 2), both, $\n), both, $\r),
 			{true, Trail, Rest}
 	end.
 
@@ -103,6 +103,10 @@ getCommand(Str) ->
 
 % Get the nick part of a user!host string
 getNick(Str) ->
+	%Admins = ["graymalkin", "Mex", "Tatskaari"].	
+	%Nick = string:sub_word(Str, 1, $!), 
+	%IsAdmin = isAdmin(Nick, Admins),
+	%{Nick, IsAdmin}.
 	string:sub_word(Str, 1, $!).
 
 
@@ -117,6 +121,18 @@ lineParse(Str) ->
 		_ -> false		% We don't know about everything - let's not deal with it.
 	end.
 
+
+% Checks that a list contains a given string
+isAdmin(_, []) -> false;
+isAdmin(Str, List) ->
+	[Head|Tail] = List,
+	if
+		Head == Str ->
+			true;
+		true ->
+			isAdmin(Str, Tail)
+	end.
+	
 
 % =============================================================================
 %
@@ -154,3 +170,10 @@ getPrefix_test() ->
 getNick_test() ->
 	?assertEqual("graymalkin", getNick("graymalkin!sjc80@kestrel.kent.ac.uk")),
 	?assertEqual("graymalkin", getNick("graymalkin!/supporter/pdc/freenode")).
+
+% Tests isAdmin funciton
+isAdmin_test() ->
+	?assertEqual(false, isAdmin("graymalkin", [])),
+	?assertEqual(false, isAdmin("graymalkin", ["Tatskaari", "Mex"])),
+	?assertEqual(true, isAdmin("graymalkin", ["Tatskaari", "Mex", "graymalkin"])).
+
