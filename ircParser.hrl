@@ -1,0 +1,3 @@
+-record(privmsg, {target, message}).
+-record(ping, {nonce}).
+-record(user, {nick, username, host}).
