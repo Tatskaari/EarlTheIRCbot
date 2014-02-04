@@ -8,7 +8,7 @@ telnet() ->
 	receive
 		#privmsg{target="#" ++ Target, from=From} ->
 			sendPid ! {prvmsg, {From, "#" ++ Target, From ++ ": Please use private chat for telnet."}};
-		#privmsg{target=Target, from=From, message="#telnet " ++ K} ->
+		#privmsg{target=Target, from=From, message="#telnet connect " ++ K} ->
 			case string:tokens(K, " ") of
 				[Host, Port] ->
 					spawn(telnet, startSession,[Host, stringToInt(Port), From]);
@@ -20,6 +20,23 @@ telnet() ->
 			exit(self(), normal)
 	end,
 	telnet().
+
+% converts a list of ints into the integer they represent 
+stringToInt(Str) ->
+	case string:to_integer(Str) of
+        {error, _} -> -1;
+        {F,_Rest} -> F
+    end.
+% splits on new lines and echos the responce
+echoResponce(A, From) ->
+	Terms = string:tokens(A, "\r\n"),
+	echoResponce(Terms, From, loop).
+echoResponce([], _,loop) ->
+	done;
+echoResponce([Head|Tail], From, loop) ->
+	sendPid ! {command, {"PRIVMSG", From, Head}},
+	echoResponce(Tail, From, loop).
+
 % starts a new session 
 startSession(Host, Port, From) ->
 	case connect(Host, Port) of
@@ -30,10 +47,19 @@ startSession(Host, Port, From) ->
 		_ ->
 			dafaqisthis
 	end.
+
+% connects to the server
+connect(Host, Port) ->
+	connect(gen_tcp:connect(Host, Port, [], 1000)).
+connect({ok, Socket})->
+	Socket;
+connect({error, Reason}) ->
+	{error, Reason}.
+
 receive_data(Socket, From) ->
 	receive
 		{tcp, Socket, Bin} ->
-			sendPid ! {command, {"PRIVMSG", From, Bin}};
+			echoResponce(Bin, From);
 		{tcp_close, Socket} ->
 			sendPid ! {prvmsg, {From, From, "Connection closed by forein host."}},
 			exit(self(), normal);
@@ -41,12 +67,6 @@ receive_data(Socket, From) ->
 			exit(self(), normal)
 	end,
 	receive_data(Socket, From).
-% converts a list of ints into the integer they represent 
-stringToInt(Str) ->
-	case string:to_integer(Str) of
-        {error, _} -> -1;
-        {F,_Rest} -> F
-    end.
 
 % Keeps a list of pids to message
 pidList(PidList) ->
@@ -60,17 +80,3 @@ pidList(PidList) ->
 		die ->
 			exit(self(), normal)
 	end.
-
-%%%%%%% potential useful code %%%%%%%
-
-
-connect(Host, Port) ->
-	connect(gen_tcp:connect(Host, Port, [], 1000)).
-connect({ok, Socket})->
-	Socket;
-connect({error, Reason}) ->
-	{error, Reason}.
-	
-
-
-
