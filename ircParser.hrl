@@ -4,3 +4,5 @@
 -record(user, {nick, username, host}).
 -record(mode, {modes}).
 -record(notice, {target, message}).
+
+-record(registerPlugin, {chan}).
