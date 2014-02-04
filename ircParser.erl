@@ -32,21 +32,28 @@ parse(PluginsChans) ->
 			case Line of
 				{} -> {};
 				_A ->
+					% Anonnomous function (F) to send line to every registered plugin
+					F = fun(Chan) -> Chan ! Line end,
+					% For each plugin run F against it
+					lists:foreach(F, PluginsChans),
 
-				% Anonnomous function (F) to send line to every registered plugin
-				F = fun(Chan) -> Chan ! Line end,
-				% For each plugin run F against it
-				lists:foreach(F, PluginsChans),
+					% Built in commands which are required for the protocol
+					case Line of
+						% Ping
+						#ping{nonce=K} ->
+							sendPid ! {command, {"PONG", K}};
 
-				% Built in commands which are required for the protocol
-				case Line of
-					% Ping
-					#ping{nonce=K} ->
-						sendPid ! {command, {"PONG", K}};
+						#privmsg{target=To, from=From, message="#plugins" ++ _} ->
+							io:format("~p~p~n~p~n", [To, From, Line]),
+							ListPlugins = fun(Chan) ->
+								M = io_lib:format("~p", [Chan]),
+								sendPid ! {privmsg, {From, To, "Plugin: " ++ M}}
+							end,
+							lists:foreach(ListPlugins, PluginsChans);
 
-					% We don't know about everything - let's not deal with it.	
-					_Default -> false 
-				end
+						% We don't know about everything - let's not deal with it.	
+						_Default -> false 
+					end
 			end,
 		checkIndentResponce(re:run(T, "NOTICE AUTH :... Got Ident response"))
     end,
@@ -57,6 +64,7 @@ parse(PluginsChans) ->
 checkIndentResponce({match, [_]}) ->
 	sendPid ! {command, {"USER", ?USER}},
 	sendPid ! {command, {"NICK", ?NICK}},
+	sendPid ! {command, {"JOIN", "#bottesting"}},
 	true;
 checkIndentResponce(_) ->
 	false.
@@ -103,20 +111,52 @@ lineParse(Str) ->
 	{_HasTrail, Trail, CommandsAndParams} = getTrail(Rest),
 	{Command, Params} = getCommand(CommandsAndParams),
 	Nick = getNick(Prefix),
-	IsAdmin = isAdmin(Nick, ["graymalkin", "Tatskaari", "Mex", "xand", "Tim"]),
+	IsAdmin = isAdmin(Nick, ["graymalkin", "Tatskaari", "xand", "Tim"]),
 	case Command of
-		"PRIVMSG" -> #privmsg{target=lists:nth(1, Params), from=getNick(Prefix),  admin=IsAdmin, message=Trail};
+		"PRIVMSG" -> #privmsg{target=lists:nth(1, Params), from=Nick,  admin=IsAdmin, message=Trail};
 		"PING" -> #ping{nonce=Trail};
 		"MODE" -> #mode{modes=Trail};
 		"NOTICE" -> 
 			io:format("NOTICE: ~s~n", [Trail]),
 			#notice{target=lists:nth(1, Params), message=Trail};
+
 		% MOTD, print it and throw it away %
 		"372"  -> io:format("MOTD: ~s~n", [Trail]), {};
+		
 		% Start of MOTD
 		"375" -> {};
+		
 		% End of MOTD
 		"376" -> {};
+		
+		% Welcome
+		"001" -> io:format("SERV: ~s~n", [Trail]), {};
+		"002" -> io:format("SERV: ~s~n", [Trail]), {};
+		"003" -> io:format("SERV: ~s~n", [Trail]), {};
+		"004" -> io:format("SERV: ~s~n", [Trail]), {}; % bugged
+
+		% Server options
+		"005" -> io:format("SERV: ~s~n", [Trail]), {};
+
+		% Server users
+		"251" -> io:format("USERS: ~s~n", [Trail]), {};
+		"252" -> io:format("USERS: ~s~n", [Trail]), {};
+		"254" -> io:format("USERS: ~s~n", [Trail]), {};
+		"255" -> io:format("USERS: ~s~n", [Trail]), {};
+		"265" -> io:format("USERS: ~s~n", [Trail]), {};
+		"266" -> io:format("USERS: ~s~n", [Trail]), {};
+
+		% Channel join
+		"JOIN" -> io:format("JOIN: ~s joined ~s~n", [Nick, Trail]);
+		"332"  -> io:format("JOIN: Topic: ~s~n", [Trail]);
+		"333"  -> io:format("JOIN: ~s~n", [Trail]); % bugged
+		"353"  -> io:format("JOIN: Users: ~s~n", [Trail]);
+		"366"  -> io:format("JOIN: End of users list.~n");
+		
+		% Nick already in use
+		"433" -> io:format("ERROR: Nick already in use."), {};
+
+		"436" -> io:format("ERROR: Nick collision."), {};
 
 		% Unknown commands
 		A -> io:format("WARNING: Un-recognised command '~s': '~s'~n", [Command, Str]),{}
