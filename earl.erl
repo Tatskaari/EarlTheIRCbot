@@ -6,7 +6,7 @@
 -import(telnet, [telnet/0]).
 -include_lib("eunit/include/eunit.hrl").
 
--define(HOSTNAME, "localhost").
+-define(HOSTNAME, "irc.cs.kent.ac.uk").
 -define(PORT, 6667).
 
 
