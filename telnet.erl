@@ -95,6 +95,7 @@ pidList(PidList) ->
 			exit(self(), normal)
 	end,
 	pidList(PidList).
+	
 % helper functoin to send each pid a message
 sendPidsMessage([], _, _) ->
 	ok;
@@ -102,4 +103,3 @@ sendPidsMessage([Head|Tail], Message, From) ->
 	io:format("TELNET SEND :: ~p~n", [Message]),
 	Head ! {command, Message, From},
 	sendPidsMessage(Tail, Message, From).
-	
