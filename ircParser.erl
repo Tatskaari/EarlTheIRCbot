@@ -146,6 +146,12 @@ lineParse(Str) ->
 		"255" -> io:format("USERS: ~s~n", [Trail]), {};
 		"265" -> io:format("USERS: ~s~n", [Trail]), {};
 		"266" -> io:format("USERS: ~s~n", [Trail]), {};
+
+		% Channel join
+		"JOIN" -> io:format("JOIN: ~s joined ~s~n", [Nick, Trail]);
+		"332"  -> io:format("JOIN: Topic: ~s~n", [Trail]);
+		"333"  -> io:format("JOIN: ~s~n", [Trail]);
+		"353"  -> io:format("JOIN: Users: ~s~n", [Trail]);
 		
 		% Nick already in use
 		"433" -> io:format("ERROR: Nick already in use."), {};
