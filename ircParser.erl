@@ -2,13 +2,8 @@
 -export([parse/0, parse/1, lineParse/1]).
 -include_lib("eunit/include/eunit.hrl").
 
-<<<<<<< HEAD
 -include("earl.hrl").
-
--define(NICK, "MexEarl").
-=======
 -define(NICK, "Earl").
->>>>>>> 5970a73db788aa771e97216c442a624b27c41e0b
 -define(USER, "Tatskaari Sir_Earl Sir_Earl Sir_Earl").
 
 %Contains the record definitions
