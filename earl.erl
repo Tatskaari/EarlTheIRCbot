@@ -1,6 +1,6 @@
 -module(earl).
 -export([main/0, connect/0, buffer/0, send/1, getLine/1]).
--import(ircParser, [start/1]).
+-import(ircParser, [start/0]).
 -include_lib("eunit/include/eunit.hrl").
 
 -define(HOSTNAME, "irc.cs.kent.ac.uk").
@@ -29,7 +29,7 @@ main() ->
 % Opens a connectoin to the server
 connect({ok, Socket}) ->
 	register(sendPid, SendPid = spawn(earl, send, [Socket])),
-	register(parserPid, spawn(ircParser, start, [SendPid])),
+	register(parserPid, spawn(ircParser, start, [])),
 	receive_data(Socket);
 connect({error, Reason}) ->
 	io:format("ERROR - Could not connect: ~s~n", [Reason]).

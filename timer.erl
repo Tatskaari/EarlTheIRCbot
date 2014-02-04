@@ -1,8 +1,8 @@
--module(time).
--export([time/1]).
+-module(timer).
+-export([timer/0]).
 -include("ircParser.hrl").
 
-time(SendPid) ->
+timer() ->
 	receive
 		die ->
 			io:format("timePid :: EXIT~n");
@@ -21,6 +21,6 @@ time(SendPid) ->
 							IntToString = fun(A) -> lists:flatten(io_lib:format("~p", [A])) end, % converts the numbers from 5 -> "5"
 							[Hour, Min, Sec, Day, Year] = lists:map(IntToString, [Hourt, Mint, Sect, Dayt, Yeart]), % aplies IntToString to each element in the list
 							Message = From ++ ": " ++ Hour ++ ":" ++ Min ++ ":" ++ Sec ++ ", " ++ Day ++ DayPrfx ++ " of " ++ Month ++ ", " ++ Year,
-							SendPid ! {prvmsg, {From, Target, Message}}
+							sendPid ! {prvmsg, {From, Target, Message}}
 	end,
-	time(SendPid).
+	timer().

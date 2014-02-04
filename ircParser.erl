@@ -1,8 +1,8 @@
 -module(ircParser).
--export([start/1, parse/1, lineParse/1]).
--import(optimusPrime, [optimusPrime/1]).
--import(time, [time/1]).
--import(telnet, [telnet/1]).
+-export([start/0, parse/0, lineParse/1]).
+-import(optimusPrime, [optimusPrime/0]).
+-import(time, [timer/0]).
+-import(telnet, [telnet/0]).
 -include_lib("eunit/include/eunit.hrl").
 
 -define(NICK, "Earl").
@@ -12,20 +12,20 @@
 -include("ircParser.hrl").
 
 
-start(SendPid) ->
-	register(primePid, spawn(optimusPrime, optimusPrime, [SendPid])),
-	register(timePid, spawn(time, time, [SendPid])),
-	register(telnetPid, spawn(telnet, telnet, [SendPid])),
-	parse(SendPid).
+start() ->
+	register(primePid, spawn(optimusPrime, optimusPrime, [])),
+	register(timerPid, spawn(timer, timer, [])),
+	register(telnetPid, spawn(telnet, telnet, [])),
+	parse().
 
 
 % Starts passing the message around to the different handlers.
-parse(SendPid) ->
+parse() ->
     receive
 		die ->
 			io:format("parserPid :: EXIT~n"),
 			primePid ! die,
-			timePid ! die,
+			timerPid ! die,
 			telnetPid ! die,
 			exit(self(), normal);
 		T->
@@ -34,9 +34,14 @@ parse(SendPid) ->
 			% Commands which don't need admin
 			case Line of
 				% Join (#j)
-				#privmsg{message="#j " ++ K} ->
-					io:format("~p~n", [K]),
-					SendPid ! {command, {"JOIN", K}};
+				#privmsg{admin=true, message="#j " ++ K} ->
+					sendPid ! {command, {"JOIN", K}};
+				
+				% Quit (#q [reason])
+				#privmsg{admin=true, message="#q " ++ K} ->
+					sendPid ! {command, {"QUIT", ":" ++ K}};
+				#privmsg{admin=true, message="#q"} ->
+					sendPid ! {command, {"QUIT", ":Earl out"}};
 
 				% Is Prime Number (#isPrime <num>)
 				#privmsg{message="#isPrime" ++ _K} ->
@@ -48,29 +53,29 @@ parse(SendPid) ->
 
 				% Time (#t)
 				#privmsg{message="#t"} ->
-					timePid ! Line;
+					timerPid ! Line;
 
 				% Telnet (#telnet)
-				#privmsg{message="#telnet " ++ K} ->
+				#privmsg{message="#telnet " ++ _} ->
 					telnetPid ! Line;
 
 				% Ping
 				#ping{nonce=K} ->
-					SendPid ! {command, {"PONG", K}};
+					sendPid ! {command, {"PONG", K}};
 
 				_Default -> false % We don't know about everything - let's not deal with it.
 			end,
-		checkIndentResponce(re:run(T, "NOTICE AUTH :... Got Ident response"), SendPid)
+		checkIndentResponce(re:run(T, "NOTICE AUTH :... Got Ident response"))
     end,
-    parse(SendPid).
+    parse().
 
 
 % Connects to the server after indent response [[ NEEDS REDOING ]]
-checkIndentResponce({match, [_]}, SendPid) ->
-	SendPid ! {command, {"USER", ?USER}},
-	SendPid ! {command, {"NICK", ?NICK}},
+checkIndentResponce({match, [_]}) ->
+	sendPid ! {command, {"USER", ?USER}},
+	sendPid ! {command, {"NICK", ?NICK}},
 	true;
-checkIndentResponce(_,_) ->
+checkIndentResponce(_) ->
 	false.
 
 
@@ -105,10 +110,6 @@ getCommand(Str) ->
 
 % Get the nick part of a user!host string
 getNick(Str) ->
-	%Admins = ["graymalkin", "Mex", "Tatskaari"].	
-	%Nick = string:sub_word(Str, 1, $!), 
-	%IsAdmin = isAdmin(Nick, Admins),
-	%{Nick, IsAdmin}.
 	string:sub_word(Str, 1, $!).
 
 
@@ -117,8 +118,10 @@ lineParse(Str) ->
 	{_HasPrefix, Prefix, Rest} = getPrefix(Str),
 	{_HasTrail, Trail, CommandsAndParams} = getTrail(Rest),
 	{Command, Params} = getCommand(CommandsAndParams),
+	Nick = getNick(Prefix),
+	IsAdmin = isAdmin(Nick, ["graymalkin", "Tatskaari", "Mex", "xand", "Tim"]),
 	case Command of
-		"PRIVMSG" -> #privmsg{target=lists:nth(1, Params), from=getNick(Prefix), message=Trail};
+		"PRIVMSG" -> #privmsg{target=lists:nth(1, Params), from=getNick(Prefix),  admin=IsAdmin, message=Trail};
 		"PING" -> #ping{nonce=Trail};
 		_ -> false		% We don't know about everything - let's not deal with it.
 	end.
@@ -144,8 +147,9 @@ isAdmin(Str, List) ->
 
 % Test parsing of PRIVMSG lines
 lineParse_privmsg_test() ->
-	?assertEqual(#privmsg{message="Hello everyone!", from="CalebDelnay", target="#mychannel"} ,lineParse(":CalebDelnay!calebd@localhost PRIVMSG #mychannel :Hello everyone!")),
-	?assertEqual(#privmsg{message=":", from="Mex", target="#bottesting"}, lineParse(":Mex!~a@a.kent.ac.uk PRIVMSG #bottesting ::")).
+	?assertEqual(#privmsg{message="Hello everyone!", from="CalebDelnay", admin=false, target="#mychannel"} ,lineParse(":CalebDelnay!calebd@localhost PRIVMSG #mychannel :Hello everyone!")),
+	?assertEqual(#privmsg{message="Hello everyone!", from="graymalkin", admin=true, target="#mychannel"} ,lineParse(":graymalkin!calebd@localhost PRIVMSG #mychannel :Hello everyone!")),
+	?assertEqual(#privmsg{message=":", from="Mex", admin=true, target="#bottesting"}, lineParse(":Mex!~a@a.kent.ac.uk PRIVMSG #bottesting ::")).
 
 % Test parsing of PING requests
 lineParse_ping_test() ->

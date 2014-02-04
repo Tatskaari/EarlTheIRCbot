@@ -1,25 +1,25 @@
 -module(optimusPrime).
--export([optimusPrime/1, primesTo/4, isPrime/4]).
+-export([optimusPrime/0, primesTo/2, isPrime/2]).
 
 %Contains the record definitions
 -include("ircParser.hrl").
 
 %%% IRC part here, maths below %%%
-optimusPrime(SendPid) ->
+optimusPrime() ->
 	receive
 		die ->
-			io:format("~s :: EXIT~n", [self()]),
+			io:format("primePid :: EXIT~n"),
 			exit(self(), normal);
 		#privmsg{target=Target, from=From, message="#primesTo " ++ K} ->
-			spawn(optimusPrime, primesTo, [K, From, Target, SendPid]);	
+			spawn(optimusPrime, primesTo, [send, {K, From, Target}]);	
 		#privmsg{target=Target, from=From, message="#isPrime " ++ K} ->
-			spawn(optimusPrime, isPrime, [K, From, Target, SendPid])
+			spawn(optimusPrime, isPrime, [send, {K, From, Target}])
 	end,
-	optimusPrime(SendPid).
+	optimusPrime().
 
 
 % The entry point of the porgram
-primesTo(K, From, Target, SendPid) ->
+primesTo(send, {K, From, Target}) ->
 	N = listToNum(K),
 			Primes = if
 				N<0 ->
@@ -32,12 +32,12 @@ primesTo(K, From, Target, SendPid) ->
 			PrintTerm = From ++ ": " ++ io_lib:format("~p",[Primes]),
 			case Target of
 				"#" ++ _ ->
-					SendPid ! {command, {"PRIVMSG", Target, PrintTerm}};
+					sendPid ! {command, {"PRIVMSG", Target, PrintTerm}};
 				_ ->
-					SendPid ! {command, {"PRIVMSG", From, PrintTerm}}
+					sendPid ! {command, {"PRIVMSG", From, PrintTerm}}
 			end.
 
-isPrime(K, From, Target, SendPid) ->
+isPrime(send, {K, From, Target}) ->
 	N = listToNum(K),
 			Result = if
 				N<0 ->
@@ -55,9 +55,9 @@ isPrime(K, From, Target, SendPid) ->
 			end,
 			case Target of
 				"#" ++ _ ->
-					SendPid ! {command, {"PRIVMSG", Target, PrintTerm}};
+					sendPid ! {command, {"PRIVMSG", Target, PrintTerm}};
 				_ ->
-					SendPid ! {command, {"PRIVMSG", From, PrintTerm}}
+					sendPid ! {command, {"PRIVMSG", From, PrintTerm}}
 			end.
 
 
