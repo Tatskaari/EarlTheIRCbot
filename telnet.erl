@@ -1,5 +1,5 @@
 -module(telnet).
--export([telnet/0, connect/2, stringToInt/1]).
+-export([telnet/0, startSession/3]).
 
 %Contains the record definitions
 -include("ircParser.hrl").
@@ -11,25 +11,42 @@ telnet() ->
 		#privmsg{target=Target, from=From, message="#telnet " ++ K} ->
 			case string:tokens(K, " ") of
 				[Host, Port] ->
-					connect(Host, stringToInt(Port));
+					spawn(telnet, startSession,[Host, stringToInt(Port), From]);
 				_ ->
 					noMatch
 			end;
-		{tcp, _, A} ->
-			sendPid ! {command, {"PRIVMSG", "Tatskaari", A}};
 		die ->
 			io:format("telnetPid :: EXIT~n"),
 			exit(self(), normal)
 	end,
 	telnet().
-
+% starts a new session 
+startSession(Host, Port, From) ->
+	case connect(Host, Port) of
+		{error, Reason} ->
+			sendPid ! {command, {"PRIVMSG", From, "Failed to connect: " ++ Reason}};
+		Socket ->
+			receive_data(Socket, From);
+		_ ->
+			dafaqisthis
+	end.
+receive_data(Socket, From) ->
+	receive
+		{tcp, Socket, Bin} ->
+			sendPid ! {command, {"PRIVMSG", From, Bin}};
+		{tcp_close, Socket} ->
+			sendPid ! {prvmsg, {From, From, "Connection closed by forein host."}},
+			exit(self(), normal);
+		die ->
+			exit(self(), normal)
+	end,
+	receive_data(Socket, From).
 % converts a list of ints into the integer they represent 
 stringToInt(Str) ->
 	case string:to_integer(Str) of
         {error, _} -> -1;
         {F,_Rest} -> F
     end.
-
 
 % Keeps a list of pids to message
 pidList(PidList) ->
@@ -52,20 +69,8 @@ connect(Host, Port) ->
 connect({ok, Socket})->
 	Socket;
 connect({error, Reason}) ->
-	io:format("~s~n", [Reason]).
+	{error, Reason}.
 	
-
-% will eventually parse the message and pass it to the right thread to do things 
-parser(K) ->
-	[Host, Port] = string:tokens(K, " "),
-	[Host, Port].
-
-% takes a string and turns it into an integer
-listToNum(List) ->
-    case string:to_integer(List) of
-        {error, _} -> -1;
-        {F,_Rest} -> F
-    end.
 
 
 
