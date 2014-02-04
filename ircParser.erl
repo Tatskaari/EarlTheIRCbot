@@ -2,6 +2,7 @@
 -export([parse/0, parse/1, lineParse/1]).
 -include_lib("eunit/include/eunit.hrl").
 
+-include("earl.hrl").
 -define(NICK, "Earl").
 -define(USER, "Tatskaari Sir_Earl Sir_Earl Sir_Earl").
 
@@ -128,12 +129,21 @@ lineParse(Str) ->
 		
 		% End of MOTD
 		"376" -> {};
-		
-		% Welcome
-		"001" -> io:format("SERV: ~s~n", [Trail]), {};
-		"002" -> io:format("SERV: ~s~n", [Trail]), {};
-		"003" -> io:format("SERV: ~s~n", [Trail]), {};
-		"004" -> io:format("SERV: ~s~n", [Trail]), {}; % bugged
+		%welcome
+		"001" -> io:format("INFO: ~s~n", [Trail]), {};
+		%welcome
+		"002" -> io:format("INFO: ~s~n", [Trail]), {};
+		%welcome
+		"003" -> io:format("INFO: ~s~n", [Trail]), {};
+		%RPL_MYINFO
+		"004" ->
+			settings ! #setVal{name=server_name, value=lists:nth(2, Params)},
+			settings ! #setVal{name=server_version, value=lists:nth(3, Params)},
+			settings ! #setVal{name=user_modes, value=lists:nth(4, Params)},
+			settings ! #setVal{name=chan_modes, value=lists:nth(5, Params)},
+			{};
+			%TODO: this in incomplete for some servers
+		% We don't know about everything - let's not deal with it.
 
 		% Server options
 		"005" -> io:format("SERV: ~s~n", [Trail]), {};
