@@ -35,7 +35,7 @@ start() ->
 	parserPid ! #registerPlugin{chan=spawn(earlAdminPlugin, start, [sendPid])},
 	parserPid ! #registerPlugin{chan=(spawn(optimusPrime, optimusPrime, []))},
 	parserPid ! #registerPlugin{chan=(spawn(telnet, telnet, []))},
-	parserPid ! #registerPlugin{chan=(spawn(timer, timer, []))}.
+	parserPid ! #registerPlugin{chan=(spawn(ircTime, ircTime, []))}.
 
 getLine(A) ->
 	Index = string:str(A, "\n"),
