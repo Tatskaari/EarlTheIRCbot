@@ -37,8 +37,6 @@ parse(SendPid) ->
 				#privmsg{message="#j " ++ K} ->
 					io:format("~p~n", [K]),
 					SendPid ! {command, {"JOIN", K}};
-				
-
 
 				% Is Prime Number (#isPrime <num>)
 				#privmsg{message="#isPrime" ++ _K} ->
@@ -53,7 +51,7 @@ parse(SendPid) ->
 					timePid ! Line;
 
 				% Telnet (#telnet)
-				#privmsg{message="#telnet"} ->
+				#privmsg{message="#telnet " ++ K} ->
 					telnetPid ! Line;
 
 				% Ping

@@ -49,12 +49,16 @@ isPrime(K, From, Target, SendPid) ->
 			end,
 			if
 				Result == true ->
-					PrintTerm = From ++ ": " ++ N ++ " is prime";
+					PrintTerm = From ++ ": " ++ K ++ " is prime";
 				true ->
-					PrintTerm = From ++ ": " ++ N ++ " is devisable by " ++ io_lib:format("~p",[Result])
+					PrintTerm = From ++ ": " ++ K ++ " is devisable by " ++ io_lib:format("~p",[Result])
 			end,
-			SendPid ! {command, {"PRIVMSG", Target, PrintTerm}}.
-
+			case Target of
+				"#" ++ _ ->
+					SendPid ! {command, {"PRIVMSG", Target, PrintTerm}};
+				_ ->
+					SendPid ! {command, {"PRIVMSG", From, PrintTerm}}
+			end.
 
 
 % takes a string and turns it into an integer
