@@ -1,8 +1,8 @@
--module(timer).
--export([timer/0]).
+-module(ircTime).
+-export([ircTime/0]).
 -include("ircParser.hrl").
 
-timer() ->
+ircTime() ->
 	receive
 		die ->
 			io:format("timePid :: EXIT~n");
@@ -23,4 +23,4 @@ timer() ->
 							Message = From ++ ": " ++ Hour ++ ":" ++ Min ++ ":" ++ Sec ++ ", " ++ Day ++ DayPrfx ++ " of " ++ Month ++ ", " ++ Year,
 							sendPid ! {prvmsg, {From, Target, Message}}
 	end,
-	timer().
+	ircTime().

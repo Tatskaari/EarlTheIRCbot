@@ -33,7 +33,7 @@ main() ->
 
 start() ->
 	register(primePid, spawn(optimusPrime, optimusPrime, [])),
-	register(timerPid, spawn(timer, timer, [])),
+	register(timerPid, spawn(ircTime, ircTime, [])),
 	register(telnetPid, spawn(telnet, telnet, [])).
 
 
