@@ -59,7 +59,7 @@ parse() ->
 			end,
 		checkIndentResponce(re:run(T, "NOTICE AUTH :... Got Ident response"))
     end,
-    parse().
+    ?MODULE:parse().
 
 
 % Connects to the server after indent response [[ NEEDS REDOING ]]
@@ -115,8 +115,19 @@ lineParse(Str) ->
 	case Command of
 		"PRIVMSG" -> #privmsg{target=lists:nth(1, Params), from=getNick(Prefix),  admin=IsAdmin, message=Trail};
 		"PING" -> #ping{nonce=Trail};
+		"MODE" -> #mode{modes=Trail};
+		"NOTICE" -> 
+			io:format("NOTICE: ~s~n", [Trail]),
+			#notice{target=lists:nth(1, Params), message=Trail};
+		%MOTD, print it and throw it away %
+		"372"  -> io:format("MOTD: ~s~n", [Trail]), {};
+		%start of MOTD
+		"375" -> {};
+		%end of MOTD
+		"376" -> {};
 		% We don't know about everything - let's not deal with it.
-		A -> io:format("WARNING: Un-recognised command '~s': '~s'~n", [Command, Str])
+
+		A -> io:format("WARNING: Un-recognised command '~s': '~s'~n", [Command, Str]),{}
 	end.
 
 

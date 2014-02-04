@@ -1,5 +1,5 @@
 -module(earl).
--export([main/0, buffer/0, send/1, getLine/1]).
+-export([main/0, buffer/0,buffer/1, send/1, getLine/1]).
 -import(ircParser, [parse/0]).
 -import(optimusPrime, [optimusPrime/0]).
 -import(time, [timer/0]).
@@ -60,9 +60,8 @@ buffer(Buffer)->
 					buffer(Buffer ++ Bin)
 			end;
 		{true, A, B} ->
-			io:format("RECEIVED :: ~s~n", [A]),
 			parserPid ! A,
-			buffer(B)
+			?MODULE:buffer(B)
 	end.
 
 
