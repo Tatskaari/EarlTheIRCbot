@@ -5,6 +5,7 @@
 -import(time, [timer/0]).
 -import(telnet, [telnet/0]).
 -include_lib("eunit/include/eunit.hrl").
+-include("ircParser.hrl").
 
 -define(HOSTNAME, "irc.cs.kent.ac.uk").
 -define(PORT, 6667).
@@ -19,6 +20,7 @@ main() ->
 	register(parserPid, spawn(ircParser, parse, [])),
 	register(mainPid, self()),
 
+	% Start the plugins
 	start(),
 
 	% Wait until a process wants to kill the program and then tell all processes to an hero 
@@ -32,10 +34,10 @@ main() ->
 	end.
 
 start() ->
-	register(primePid, spawn(optimusPrime, optimusPrime, [])),
-	register(timerPid, spawn(timer, timer, [])),
-	register(telnetPid, spawn(telnet, telnet, [])).
-
+	parserPid ! #registerPlugin{chan=spawn(earlAdminPlugin, start, [sendPid])},
+	parserPid ! #registerPlugin{chan=(spawn(optimusPrime, optimusPrime, []))},
+	parserPid ! #registerPlugin{chan=(spawn(telnet, telnet, []))},
+	parserPid ! #registerPlugin{chan=(spawn(timer, timer, []))}.
 
 getLine(A) ->
 	Index = string:str(A, "\n"),

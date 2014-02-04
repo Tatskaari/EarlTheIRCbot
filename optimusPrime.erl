@@ -15,7 +15,7 @@ optimusPrime() ->
 		#privmsg{target=Target, from=From, message="#isPrime " ++ K} ->
 			spawn(optimusPrime, isPrime, [send, {K, From, Target}])
 	end,
-	optimusPrime().
+	?MODULE:optimusPrime().
 
 
 % The entry point of the porgram

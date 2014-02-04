@@ -1,5 +1,5 @@
 -module(ircParser).
--export([parse/0, lineParse/1]).
+-export([parse/0, parse/1, lineParse/1]).
 -include_lib("eunit/include/eunit.hrl").
 
 -define(NICK, "Earl").
@@ -13,6 +13,9 @@
 
 % Starts passing the message around to the different handlers.
 parse() ->
+	parse([]).
+
+parse(PluginsChans) ->
     receive
 		die ->
 			io:format("parserPid :: EXIT~n"),
@@ -20,54 +23,29 @@ parse() ->
 			timerPid ! die,
 			telnetPid ! die,
 			exit(self(), normal);
+	    	#registerPlugin{chan=Pid} ->
+		    ?MODULE:parse([Pid|PluginsChans]);
+
 		T->
 			Line = lineParse(T),
-
-			% Commands which don't need admin
 			case Line of
-				% nick (#n <NICK>)
-				#privmsg{admin=true, message="#n " ++ Nick} ->
-					sendPid ! {command, {"NICK", Nick}};
+				{} -> {};
+				_A ->
 
-				% Join (#j <CHANNEL>)
-				#privmsg{admin=true, message="#j " ++ K} ->
-					sendPid ! {command, {"JOIN", K}};
-				
-				% Part (#p <CHANNEL>)
-				#privmsg{admin=true, message="#p " ++ Channel} ->
-					sendPid ! {command, {"PART", Channel}};
+				F = fun(Chan) -> Chan ! Line end,
+				lists:foreach(F, PluginsChans),
+				% Commands which don't need admin
+				case Line of
+					% Ping
+					#ping{nonce=K} ->
+						sendPid ! {command, {"PONG", K}};
 
-				% Quit (#q [reason])
-				#privmsg{admin=true, message="#q " ++ K} ->
-					sendPid ! {command, {"QUIT", ":" ++ K}};
-				#privmsg{admin=true, message="#q"} ->
-					sendPid ! {command, {"QUIT", ":Earl out"}};
-
-				% Is Prime Number (#isPrime <num>)
-				#privmsg{message="#isPrime" ++ _K} ->
-					primePid ! Line;
-
-				% List the primes to a given number (#primesTo <num>)
-				#privmsg{message="#primesTo " ++ _K} ->
-					primePid ! Line;
-
-				% Time (#t)
-				#privmsg{message="#t"} ->
-					timerPid ! Line;
-
-				% Telnet (#telnet <commands>)
-				#privmsg{message="#telnet " ++ _} ->
-					telnetPid ! Line;
-
-				% Ping
-				#ping{nonce=K} ->
-					sendPid ! {command, {"PONG", K}};
-
-				_Default -> false % We don't know about everything - let's not deal with it.
+					_Default -> false % We don't know about everything - let's not deal with it.
+				end
 			end,
 		checkIndentResponce(re:run(T, "NOTICE AUTH :... Got Ident response"))
     end,
-    ?MODULE:parse().
+    ?MODULE:parse(PluginsChans).
 
 
 % Connects to the server after indent response [[ NEEDS REDOING ]]
