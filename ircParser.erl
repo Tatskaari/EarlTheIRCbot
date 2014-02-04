@@ -115,7 +115,8 @@ lineParse(Str) ->
 	case Command of
 		"PRIVMSG" -> #privmsg{target=lists:nth(1, Params), from=getNick(Prefix),  admin=IsAdmin, message=Trail};
 		"PING" -> #ping{nonce=Trail};
-		_ -> false		% We don't know about everything - let's not deal with it.
+		% We don't know about everything - let's not deal with it.
+		A -> io:format("WARNING: Un-recognised command '~s': '~s'~n", [Command, Str])
 	end.
 
 
