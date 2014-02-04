@@ -23,6 +23,7 @@ parse(PluginsChans) ->
 			timerPid ! die,
 			telnetPid ! die,
 			exit(self(), normal);
+
 	    	#registerPlugin{chan=Pid} ->
 		    ?MODULE:parse([Pid|PluginsChans]);
 
@@ -32,15 +33,19 @@ parse(PluginsChans) ->
 				{} -> {};
 				_A ->
 
+				% Anonnomous function (F) to send line to every registered plugin
 				F = fun(Chan) -> Chan ! Line end,
+				% For each plugin run F against it
 				lists:foreach(F, PluginsChans),
-				% Commands which don't need admin
+
+				% Built in commands which are required for the protocol
 				case Line of
 					% Ping
 					#ping{nonce=K} ->
 						sendPid ! {command, {"PONG", K}};
-
-					_Default -> false % We don't know about everything - let's not deal with it.
+						<a href=""></a>
+					% We don't know about everything - let's not deal with it.	
+					_Default -> false 
 				end
 			end,
 		checkIndentResponce(re:run(T, "NOTICE AUTH :... Got Ident response"))
@@ -58,6 +63,7 @@ checkIndentResponce(_) ->
 
 
 % Get the command part of a line
+% Produces tuple: {HasPrefix, Prefix, Rest}
 getPrefix(":" ++ Str) ->
 	SpaceIndex = string:str(Str, " "),
 	Prefix = string:substr(Str, 1, SpaceIndex-1),
@@ -105,14 +111,14 @@ lineParse(Str) ->
 		"NOTICE" -> 
 			io:format("NOTICE: ~s~n", [Trail]),
 			#notice{target=lists:nth(1, Params), message=Trail};
-		%MOTD, print it and throw it away %
+		% MOTD, print it and throw it away %
 		"372"  -> io:format("MOTD: ~s~n", [Trail]), {};
-		%start of MOTD
+		% Start of MOTD
 		"375" -> {};
-		%end of MOTD
+		% End of MOTD
 		"376" -> {};
-		% We don't know about everything - let's not deal with it.
 
+		% Unknown commands
 		A -> io:format("WARNING: Un-recognised command '~s': '~s'~n", [Command, Str]),{}
 	end.
 
@@ -127,6 +133,3 @@ isAdmin(Str, List) ->
 		true ->
 			isAdmin(Str, Tail)
 	end.
-	
-
-

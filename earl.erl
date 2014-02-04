@@ -89,6 +89,9 @@ send(Socket) ->
 					sendPid ! {command, {"PRIVMSG", Target, Message}};
 				_UserName ->
 					sendPid ! {command, {"PRIVMSG", From, Message}}
-			end
+			end;
+		{raw, {Data}} ->
+			io:format("SENT :: ~s~p", [Data]),
+			ok = gen_tcp:send(Socket, Data)
 	end,
 	send(Socket).
