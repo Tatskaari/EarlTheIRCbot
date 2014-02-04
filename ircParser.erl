@@ -34,11 +34,14 @@ parse(SendPid) ->
 			% Commands which don't need admin
 			case Line of
 				% Join (#j)
-				#privmsg{message="#j " ++ K} ->
-					io:format("~p~n", [K]),
+				#privmsg{admin=true, message="#j " ++ K} ->
 					SendPid ! {command, {"JOIN", K}};
 				
-
+				% Quit (#q [reason])
+				#privmsg{admin=true, message="#q " ++ K} ->
+					SendPid ! {command, {"QUIT", ":" ++ K}};
+				#privmsg{admin=true, message="#q"} ->
+					SendPid ! {command, {"QUIT", ":Earl out"}};
 
 				% Is Prime Number (#isPrime <num>)
 				#privmsg{message="#isPrime" ++ _K} ->
@@ -103,10 +106,6 @@ getCommand(Str) ->
 
 % Get the nick part of a user!host string
 getNick(Str) ->
-	%Admins = ["graymalkin", "Mex", "Tatskaari"].	
-	%Nick = string:sub_word(Str, 1, $!), 
-	%IsAdmin = isAdmin(Nick, Admins),
-	%{Nick, IsAdmin}.
 	string:sub_word(Str, 1, $!).
 
 
@@ -115,8 +114,10 @@ lineParse(Str) ->
 	{_HasPrefix, Prefix, Rest} = getPrefix(Str),
 	{_HasTrail, Trail, CommandsAndParams} = getTrail(Rest),
 	{Command, Params} = getCommand(CommandsAndParams),
+	Nick = getNick(Prefix),
+	IsAdmin = isAdmin(Nick, ["graymalkin", "Tatskaari", "Mex", "xand", "Tim"]),
 	case Command of
-		"PRIVMSG" -> #privmsg{target=lists:nth(1, Params), from=getNick(Prefix), message=Trail};
+		"PRIVMSG" -> #privmsg{target=lists:nth(1, Params), from=getNick(Prefix),  admin=IsAdmin, message=Trail};
 		"PING" -> #ping{nonce=Trail};
 		_ -> false		% We don't know about everything - let's not deal with it.
 	end.
@@ -142,8 +143,9 @@ isAdmin(Str, List) ->
 
 % Test parsing of PRIVMSG lines
 lineParse_privmsg_test() ->
-	?assertEqual(#privmsg{message="Hello everyone!", from="CalebDelnay", target="#mychannel"} ,lineParse(":CalebDelnay!calebd@localhost PRIVMSG #mychannel :Hello everyone!")),
-	?assertEqual(#privmsg{message=":", from="Mex", target="#bottesting"}, lineParse(":Mex!~a@a.kent.ac.uk PRIVMSG #bottesting ::")).
+	?assertEqual(#privmsg{message="Hello everyone!", from="CalebDelnay", admin=false, target="#mychannel"} ,lineParse(":CalebDelnay!calebd@localhost PRIVMSG #mychannel :Hello everyone!")),
+	?assertEqual(#privmsg{message="Hello everyone!", from="graymalkin", admin=true, target="#mychannel"} ,lineParse(":graymalkin!calebd@localhost PRIVMSG #mychannel :Hello everyone!")),
+	?assertEqual(#privmsg{message=":", from="Mex", admin=true, target="#bottesting"}, lineParse(":Mex!~a@a.kent.ac.uk PRIVMSG #bottesting ::")).
 
 % Test parsing of PING requests
 lineParse_ping_test() ->
