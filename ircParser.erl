@@ -64,7 +64,6 @@ parse(PluginsChans) ->
 checkIndentResponce({match, [_]}) ->
 	sendPid ! {command, {"USER", ?USER}},
 	sendPid ! {command, {"NICK", ?NICK}},
-	sendPid ! {command, {"JOIN", "#bottesting"}},
 	true;
 checkIndentResponce(_) ->
 	false.
