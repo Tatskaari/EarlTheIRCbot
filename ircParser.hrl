@@ -8,7 +8,7 @@
 -record(nick, {nick}).
 -record(join, {channel}).
 -record(part, {channel}).
--record(quit, {quit}).
+-record(quit, {reason}).
 -record(mode, {modes}).
 
 -record(notice, {target, message}).
@@ -16,4 +16,4 @@
 -record(registerPlugin, {chan}).
 
 % Data types
--record(user, {nick, username, host}).
+%-record(user, {nick, username, host}).

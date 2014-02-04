@@ -3,7 +3,7 @@
 -include_lib("eunit/include/eunit.hrl").
 
 -include("earl.hrl").
--define(NICK, "Earl").
+-define(NICK, "SimonsEarl").
 -define(USER, "Tatskaari Sir_Earl Sir_Earl Sir_Earl").
 
 %Contains the record definitions
@@ -44,11 +44,11 @@ parse(PluginsChans) ->
 						#ping{nonce=K} ->
 							sendPid ! {command, {"PONG", K}};
 
-						#privmsg{target=To, from=From, message="#plugins" ++ _} ->
+						#privmsg{from=From, target=To, message="#plugins" ++ _} ->
 							io:format("~p~p~n~p~n", [To, From, Line]),
 							ListPlugins = fun(Chan) ->
 								M = io_lib:format("~p", [Chan]),
-								sendPid ! #privmsg{from=From, target=To, message=("Plugin: " ++ M)}
+								sendPid ! #privmsg{target=To, message=("Plugin: " ++ M)}
 							end,
 							lists:foreach(ListPlugins, PluginsChans);
 
@@ -111,7 +111,7 @@ lineParse(Str) ->
 	{_HasTrail, Trail, CommandsAndParams} = getTrail(Rest),
 	{Command, Params} = getCommand(CommandsAndParams),
 	Nick = getNick(Prefix),
-	IsAdmin = isAdmin(Nick, ["graymalkin", "Tatskaari", "xand", "Tim"]),
+	IsAdmin = isAdmin(Nick, ["graymalkin", "Tatskaari", "Mex", "xand", "Tim"]),
 	case Command of
 		"PRIVMSG" -> #privmsg{target=lists:nth(1, Params), from=Nick,  admin=IsAdmin, message=Trail};
 		"PING" -> #ping{nonce=Trail};

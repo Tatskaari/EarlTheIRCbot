@@ -30,7 +30,7 @@ main() ->
 			parserPid ! die,
 			connectPid ! die,
 			settings ! die,
-			io:format("mainPid :: EXIT~n")
+			io:format("mainPid :: EXIT~n"),
 			exit(self(), normal)
 	end.
 
@@ -78,22 +78,23 @@ send(Socket) ->
 
 		#privmsg{from=From, target=Target, message=Message} ->
 			case Target of
+				_ when From == undefined ->
+					M = "PRIVMSG " ++ Target ++ " :" ++ Message ++ "\r\n",
+					io:format("SENT: ~s", [M]),
+					ok = gen_tcp:send(Socket, M);
+
 				% When a message was sent to a channel, send response to channel
 				"#" ++ _ ->
-					M = Command ++ " " ++ Target ++ " :" ++ Message ++ "\r\n",
+					M = "PRIVMSG " ++ Target ++ " :" ++ Message ++ "\r\n",
 					io:format("SENT: ~s", [M]),
 					ok = gen_tcp:send(Socket, M);
 
 				% Otherwise send to the originator
 				_ ->
-					M = Command ++ " " ++ From ++ " :" ++ Message ++ "\r\n",
+					M = "PRIVMSG " ++ From ++ " :" ++ Message ++ "\r\n",
 					io:format("SENT: ~s", [M]),
 					ok = gen_tcp:send(Socket, M)
 			end;
-		#privmsg{target=Target, message=Message} ->
-			M = Command ++ " " ++ Target ++ " :" ++ Message ++ "\r\n",
-			io:format("SENT: ~s", [M]),
-			ok = gen_tcp:send(Socket, M);
 
 		#command{command=Command, data=Data} ->
 			M = Command ++ " " ++ Data ++ "\r\n",

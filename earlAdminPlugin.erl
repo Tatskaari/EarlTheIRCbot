@@ -6,7 +6,7 @@ start(SendPid) ->
 	receive
 		% nick (#n <NICK>)
 		#privmsg{admin=true, message="#n " ++ Nick} ->
-			SendPid ! #nick{nick=?NICK};
+			SendPid ! #nick{nick=Nick};
 
 		% Join (#j <CHANNEL>)
 		#privmsg{admin=true, message="#j " ++ K} ->
