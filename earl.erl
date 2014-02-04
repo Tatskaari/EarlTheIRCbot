@@ -17,6 +17,7 @@ main() ->
 	register(connectPid, spawn(earlConnection, connect, [?HOSTNAME, ?PORT])),
 	register(parserPid, spawn(ircParser, parse, [])),
 	register(mainPid, self()),
+	register(settings, spawn(fun() -> setting_server() end)),
 
 	% Start the plugins
 	start(),
