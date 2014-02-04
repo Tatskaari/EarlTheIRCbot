@@ -26,7 +26,6 @@ main() ->
 	receive
 		die ->
 			bufferPid ! die,
-			sendPid ! die,
 			parserPid ! die,
 			connectPid ! die,
 			settings ! die,
