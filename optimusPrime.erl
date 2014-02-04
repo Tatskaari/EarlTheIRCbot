@@ -8,7 +8,7 @@
 optimusPrime(SendPid) ->
 	receive
 		die ->
-			io:format("~s :: EXIT~n", [self()]),
+			io:format("primePid :: EXIT~n"),
 			exit(self(), normal);
 		#privmsg{target=Target, from=From, message="#primesTo " ++ K} ->
 			spawn(optimusPrime, primesTo, [K, From, Target, SendPid]);	
