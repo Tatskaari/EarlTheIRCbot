@@ -2,6 +2,7 @@
 -export([parse/0, parse/1, lineParse/1]).
 -include_lib("eunit/include/eunit.hrl").
 
+
 -define(NICK, "SimonsEarl").
 -define(USER, "Tatskaari Sir_Earl Sir_Earl Sir_Earl").
 
@@ -64,6 +65,7 @@ parse(PluginsChans) ->
 checkIndentResponce({match, [_]}) ->
 	sendPid ! {command, {"USER", ?USER}},
 	sendPid ! {command, {"NICK", ?NICK}},
+	sendPid ! {command, {"JOIN", "#bottesting"}},
 	true;
 checkIndentResponce(_) ->
 	false.
@@ -124,6 +126,13 @@ lineParse(Str) ->
 		"375" -> {};
 		% End of MOTD
 		"376" -> {};
+		%welcome
+		"001" -> io:format("INFO: ~s~n", [Trail]), {};
+		%welcome
+		"002" -> io:format("INFO: ~s~n", [Trail]), {};
+		%welcome
+		"003" -> io:format("INFO: ~s~n", [Trail]), {};
+		% We don't know about everything - let's not deal with it.
 
 		% Unknown commands
 		A -> io:format("WARNING: Un-recognised command '~s': '~s'~n", [Command, Str]),{}
