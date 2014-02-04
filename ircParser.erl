@@ -114,7 +114,7 @@ lineParse(Str) ->
 	Nick = getNick(Prefix),
 	IsAdmin = isAdmin(Nick, ["graymalkin", "Tatskaari", "Mex", "xand", "Tim"]),
 	case Command of
-		"PRIVMSG" -> #privmsg{target=lists:nth(1, Params), from=getNick(Prefix),  admin=IsAdmin, message=Trail};
+		"PRIVMSG" -> #privmsg{target=lists:nth(1, Params), from=Nick,  admin=IsAdmin, message=Trail};
 		"PING" -> #ping{nonce=Trail};
 		"MODE" -> #mode{modes=Trail};
 		"NOTICE" -> 
@@ -122,17 +122,31 @@ lineParse(Str) ->
 			#notice{target=lists:nth(1, Params), message=Trail};
 		% MOTD, print it and throw it away %
 		"372"  -> io:format("MOTD: ~s~n", [Trail]), {};
+		
 		% Start of MOTD
 		"375" -> {};
+		
 		% End of MOTD
 		"376" -> {};
-		%welcome
+		
+		% Welcome
 		"001" -> io:format("INFO: ~s~n", [Trail]), {};
-		%welcome
+		
+		% Welcome
 		"002" -> io:format("INFO: ~s~n", [Trail]), {};
-		%welcome
+		
+		% Welcome
 		"003" -> io:format("INFO: ~s~n", [Trail]), {};
-		% We don't know about everything - let's not deal with it.
+
+		% Welcome
+		"004" -> io:format("INFO: ~s~n", [Trail]), {};
+		
+		% Nick already in use
+		"433" -> io:format("ERROR: Nick already in use."),
+			sendPid ! {privmsg, {Nick, lists:nth(1, Params), "Error: Nick already in use."}};
+
+		"436" -> io:format("ERROR: Nick collision."),
+			sendPid ! {privmsg, {Nick, lists:nth(1, Params), "Error: Nick collision."}};
 
 		% Unknown commands
 		A -> io:format("WARNING: Un-recognised command '~s': '~s'~n", [Command, Str]),{}
