@@ -48,7 +48,7 @@ parse(PluginsChans) ->
 							io:format("~p~p~n~p~n", [To, From, Line]),
 							ListPlugins = fun(Chan) ->
 								M = io_lib:format("~p", [Chan]),
-								sendPid ! {privmsg, {From, To, "Plugin: " ++ M}}
+								sendPid ! #privmsg{from=From, target=To, message=("Plugin: " ++ M)}
 							end,
 							lists:foreach(ListPlugins, PluginsChans);
 
@@ -63,8 +63,8 @@ parse(PluginsChans) ->
 
 % Connects to the server after indent response [[ NEEDS REDOING ]]
 checkIndentResponce({match, [_]}) ->
-	sendPid ! {command, {"USER", ?USER}},
-	sendPid ! {command, {"NICK", ?NICK}},
+	sendPid ! #user{user=?USER},
+	sendPid ! #nick{nick=?NICK},
 	true;
 checkIndentResponce(_) ->
 	false.
@@ -142,7 +142,6 @@ lineParse(Str) ->
 			settings ! #setVal{name=chan_modes, value=lists:nth(5, Params)},
 			{};
 			%TODO: this in incomplete for some servers
-		% We don't know about everything - let's not deal with it.
 
 		% Server options
 		"005" -> io:format("SERV: ~s~n", [Trail]), {};
@@ -158,7 +157,7 @@ lineParse(Str) ->
 		% Channel join
 		"JOIN" -> io:format("JOIN: ~s joined ~s~n", [Nick, Trail]);
 		"332"  -> io:format("JOIN: Topic: ~s~n", [Trail]);
-		"333"  -> io:format("JOIN: ~s~n", [lists:nth(1, Params)]); % bugged
+		"333"  -> io:format("JOIN: ~s~n", [lists:nth(1, Params)]);
 		"353"  -> io:format("JOIN: Users: ~s~n", [Trail]);
 		"366"  -> io:format("JOIN: End of users list.~n");
 

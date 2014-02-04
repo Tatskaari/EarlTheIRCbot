@@ -96,6 +96,41 @@ send(Socket) ->
 		    io:format("SENT: ~s", [M]),
 			ok = gen_tcp:send(Socket, M);
 
+		#ping{nonce=N} ->
+			M = "PING :" ++ N ++ "\r\n",
+			io:format("SENT: ~s", [M]),
+			ok = gen_tcp:send(Socket, M);
+
+		#pong{nonce=N} ->
+			M = "PONG " ++ N ++ "\r\n",
+			io:format("SENT: ~s", [M]),
+			ok = gen_tcp:send(Socket, M);
+
+		#user{user=U} ->
+			M = "USER " ++ U ++ "\r\n",
+			io:format("SENT: ~s", [M]),
+			ok = gen_tcp:send(Socket, M);
+
+		#nick{nick=N} ->
+			M = "NICK " ++ N ++ "\r\n",
+			io:format("SENT: ~s", [M]),
+			ok = gen_tcp:send(Socket, M);
+
+		#join{channel=C} ->
+			M = "JOIN " ++ C ++ "\r\n",
+			io:format("SENT: ~s", [M]),
+			ok = gen_tcp:send(Socket, M);
+
+		#part{channel=C} ->
+			M = "PART " ++ C ++ "\r\n",
+			io:format("SENT: ~s", [M]),
+			ok = gen_tcp:send(Socket, M);
+
+		#quit{reason=R} ->
+			M = "QUIT :" ++ R ++ "\r\n",
+			io:format("SENT: ~s", [M]),
+			ok = gen_tcp:send(Socket, M);
+
 		#raw{data=Data} ->
 			io:format("SENT :: ~s~n", [Data]),
 			ok = gen_tcp:send(Socket, Data)

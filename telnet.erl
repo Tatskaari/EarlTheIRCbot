@@ -12,7 +12,7 @@ loop() ->
 	receive
 		%stops telnet happening outside of private chats
 		#privmsg{target="#" ++ Target, from=From, message="#telnet" ++ _} ->
-			sendPid ! {prvmsg, {From, "#" ++ Target, From ++ ": Please use private chat for telnet."}};
+			sendPid ! #privmsg{target=("#"++Target), message=(From ++ ": Please use private chat for telnet.")};
 
 		% Starts a session for the user: #telnet connect <HOST> <PORT>
 		#privmsg{from=From, message="#telnet connect " ++ K} ->
@@ -52,7 +52,7 @@ echoResponce(A, From) ->
 echoResponce([], _,loop) ->
 	done;
 echoResponce([Head|Tail], From, loop) ->
-	sendPid ! {command, {"PRIVMSG", From, Head}},
+	sendPid ! #privmsg{target=From, message=Head},
 	timer:sleep(1000),
 	echoResponce(Tail, From, loop).
 
@@ -60,7 +60,7 @@ echoResponce([Head|Tail], From, loop) ->
 startSession(Host, Port, From) ->
 	case connect(Host, Port) of
 		{error, Reason} ->
-			sendPid ! {command, {"PRIVMSG", From, "Failed to connect: " ++ Reason}};
+			sendPid ! #privmsg{target=From, message="Failed to connect: " ++ Reason};
 		Socket ->
 			receive_data(Socket, From)
 	end.
@@ -79,7 +79,7 @@ receive_data(Socket, From) ->
 		{tcp, Socket, Bin} ->
 			echoResponce(Bin, From);
 		{tcp_closed, Socket} ->
-			sendPid ! {prvmsg, {From, From, "Connection closed by forein host."}},
+			sendPid !  #privmsg{target=From, message="Connection closed by foreign host."},
 			exit(self(), normal);
 		{command, Message, From} ->
 			gen_tcp:send(Socket, Message);
