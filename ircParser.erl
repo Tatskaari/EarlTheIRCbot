@@ -2,6 +2,8 @@
 -export([parse/0, parse/1, lineParse/1]).
 -include_lib("eunit/include/eunit.hrl").
 
+-include("earl.hrl").
+
 -define(NICK, "MexEarl").
 -define(USER, "Tatskaari Sir_Earl Sir_Earl Sir_Earl").
 
@@ -118,8 +120,15 @@ lineParse(Str) ->
 		"002" -> io:format("INFO: ~s~n", [Trail]), {};
 		%welcome
 		"003" -> io:format("INFO: ~s~n", [Trail]), {};
+		%RPL_MYINFO
+		"004" ->
+			settings ! #setVal{name=server_name, value=lists:nth(2, Params)},
+			settings ! #setVal{name=server_version, value=lists:nth(3, Params)},
+			settings ! #setVal{name=user_modes, value=lists:nth(4, Params)},
+			settings ! #setVal{name=chan_modes, value=lists:nth(5, Params)},
+			{};
+			%TODO: this in incomplete for some servers
 		% We don't know about everything - let's not deal with it.
-
 		A -> io:format("WARNING: Un-recognised command '~s': '~s'~n", [Command, Str]),{}
 	end.
 
