@@ -29,6 +29,8 @@ main() ->
 			sendPid ! die,
 			parserPid ! die,
 			connectPid ! die,
+			settings ! die,
+			io:format("mainPid :: EXIT~n")
 			exit(self(), normal)
 	end.
 
@@ -73,23 +75,28 @@ send(Socket) ->
 		die ->
 			io:format("sendPid :: EXIT~n"),
 			exit(self(), normal);
-		{command, {Command, Target, Message}} ->
-			M = Command ++ " " ++ Target ++ " :" ++ Message ++ "\r\n",
-		    io:format("SENT :: ~s", [M]),
-			ok = gen_tcp:send(Socket, M);
-		{command, {Command, Message}} ->
-			M = Command ++ " " ++ Message ++ "\r\n",
-		    io:format("SENT :: ~s", [M]),
-			ok = gen_tcp:send(Socket, M);
-		{prvmsg, {From, Target, Message}} ->
-			io:format("Got prvmsg~n"),
+
+		#privmsg{from=From, target=Target, message=Message} ->
 			case Target of
-				"#" ++ _Channel ->
-					sendPid ! {command, {"PRIVMSG", Target, Message}};
-				_UserName ->
-					sendPid ! {command, {"PRIVMSG", From, Message}}
+				% When a message was sent to a channel, send response to channel
+				"#" ++ _ ->
+					M = Command ++ " " ++ Target ++ " :" ++ Message ++ "\r\n",
+					io:format("SENT: ~s", [M]),
+					ok = gen_tcp:send(Socket, M);
+
+				% Otherwise send to the originator
+				_ ->
+					M = Command ++ " " ++ From ++ " :" ++ Message ++ "\r\n",
+					io:format("SENT: ~s", [M]),
+					ok = gen_tcp:send(Socket, M)
 			end;
-		{raw, {Data}} ->
+
+		#command{command=Command, data=Data} ->
+			M = Command ++ " " ++ Data ++ "\r\n",
+		    io:format("SENT: ~s", [M]),
+			ok = gen_tcp:send(Socket, M);
+
+		#raw{data=Data} ->
 			io:format("SENT :: ~s~n", [Data]),
 			ok = gen_tcp:send(Socket, Data)
 	end,
@@ -109,6 +116,7 @@ setting_server(Dict) ->
 					Chan ! false
 			end;
 		die ->
+			io:format("settings :: EXIT~n"),
 			exit(self(), normal)	
 	end,
 	setting_server(Dict).
