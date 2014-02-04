@@ -2,7 +2,7 @@
 -export([parse/0, lineParse/1]).
 -include_lib("eunit/include/eunit.hrl").
 
--define(NICK, "mextest").
+-define(NICK, "Earl").
 -define(USER, "Tatskaari Sir_Earl Sir_Earl Sir_Earl").
 
 %Contains the record definitions
@@ -25,10 +25,18 @@ parse() ->
 
 			% Commands which don't need admin
 			case Line of
-				% Join (#j)
+				% nick (#n <NICK>)
+				#privmsg{admin=true, message="#n " ++ Nick} ->
+					sendPid ! {command, {"NICK", Nick}};
+
+				% Join (#j <CHANNEL>)
 				#privmsg{admin=true, message="#j " ++ K} ->
 					sendPid ! {command, {"JOIN", K}};
 				
+				% Part (#p <CHANNEL>)
+				#privmsg{admin=true, message="#p " ++ Channel} ->
+					sendPid ! {command, {"PART", Channel}};
+
 				% Quit (#q [reason])
 				#privmsg{admin=true, message="#q " ++ K} ->
 					sendPid ! {command, {"QUIT", ":" ++ K}};
@@ -47,7 +55,7 @@ parse() ->
 				#privmsg{message="#t"} ->
 					timerPid ! Line;
 
-				% Telnet (#telnet)
+				% Telnet (#telnet <commands>)
 				#privmsg{message="#telnet " ++ _} ->
 					telnetPid ! Line;
 
