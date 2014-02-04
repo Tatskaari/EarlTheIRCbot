@@ -134,7 +134,7 @@ lineParse(Str) ->
 		"001" -> io:format("SERV: ~s~n", [Trail]), {};
 		"002" -> io:format("SERV: ~s~n", [Trail]), {};
 		"003" -> io:format("SERV: ~s~n", [Trail]), {};
-		"004" -> io:format("SERV: ~s~n", [Trail]), {};
+		"004" -> io:format("SERV: ~s~n", [Trail]), {}; % bugged
 
 		% Server options
 		"005" -> io:format("SERV: ~s~n", [Trail]), {};
@@ -150,7 +150,7 @@ lineParse(Str) ->
 		% Channel join
 		"JOIN" -> io:format("JOIN: ~s joined ~s~n", [Nick, Trail]);
 		"332"  -> io:format("JOIN: Topic: ~s~n", [Trail]);
-		"333"  -> io:format("JOIN: ~s~n", [Trail]);
+		"333"  -> io:format("JOIN: ~s~n", [Trail]); % bugged
 		"353"  -> io:format("JOIN: Users: ~s~n", [Trail]);
 		
 		% Nick already in use
