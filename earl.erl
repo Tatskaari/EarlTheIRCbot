@@ -36,7 +36,7 @@ start() ->
 	parserPid ! #registerPlugin{chan=spawn(earlAdminPlugin, start, [sendPid])},
 	parserPid ! #registerPlugin{chan=(spawn(optimusPrime, optimusPrime, []))},
 	parserPid ! #registerPlugin{chan=(spawn(telnet, telnet, []))},
-	parserPid ! #registerPlugin{chan=(spawn(timer, timer, []))}.
+	parserPid ! #registerPlugin{chan=(spawn(ircTime, ircTime, []))}.
 
 getLine(A) ->
 	Index = string:str(A, "\n"),
@@ -88,7 +88,10 @@ send(Socket) ->
 					sendPid ! {command, {"PRIVMSG", Target, Message}};
 				_UserName ->
 					sendPid ! {command, {"PRIVMSG", From, Message}}
-			end
+			end;
+		{raw, {Data}} ->
+			io:format("SENT :: ~s~n", [Data]),
+			ok = gen_tcp:send(Socket, Data)
 	end,
 	send(Socket).
 
