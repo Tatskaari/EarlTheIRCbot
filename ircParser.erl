@@ -150,9 +150,15 @@ lineParse(Str) ->
 		% Channel join
 		"JOIN" -> io:format("JOIN: ~s joined ~s~n", [Nick, Trail]);
 		"332"  -> io:format("JOIN: Topic: ~s~n", [Trail]);
-		"333"  -> io:format("JOIN: ~s~n", [Trail]); % bugged
+		"333"  -> io:format("JOIN: ~s~n", [lists:nth(1, Params)]); % bugged
 		"353"  -> io:format("JOIN: Users: ~s~n", [Trail]);
 		"366"  -> io:format("JOIN: End of users list.~n");
+
+		% Part
+		"PART" -> io:format("PART: ~s parted ~s~n", [Nick, lists:nth(1, Params)]);
+
+		% Quits
+		"QUIT" -> io:format("QUIT: ~s quit (~s)~n", [Nick, Trail]);
 		
 		% Nick already in use
 		"433" -> io:format("ERROR: Nick already in use."), {};
