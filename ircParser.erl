@@ -11,6 +11,8 @@
 %Contains the record definitions
 -include("ircParser.hrl").
 
+%Include Tests
+-include("ircParser_test.erl").
 
 start() ->
 	register(primePid, spawn(optimusPrime, optimusPrime, [])),
@@ -139,47 +141,4 @@ isAdmin(Str, List) ->
 	end.
 	
 
-% =============================================================================
-%
-%                                UNIT TESTING
-%
-% =============================================================================
-
-% Test parsing of PRIVMSG lines
-lineParse_privmsg_test() ->
-	?assertEqual(#privmsg{message="Hello everyone!", from="CalebDelnay", admin=false, target="#mychannel"} ,lineParse(":CalebDelnay!calebd@localhost PRIVMSG #mychannel :Hello everyone!")),
-	?assertEqual(#privmsg{message="Hello everyone!", from="graymalkin", admin=true, target="#mychannel"} ,lineParse(":graymalkin!calebd@localhost PRIVMSG #mychannel :Hello everyone!")),
-	?assertEqual(#privmsg{message=":", from="Mex", admin=true, target="#bottesting"}, lineParse(":Mex!~a@a.kent.ac.uk PRIVMSG #bottesting ::")).
-
-% Test parsing of PING requests
-lineParse_ping_test() ->
-	?assertEqual(#ping{nonce="irc.localhost.localdomain"} ,lineParse("PING :irc.localhost.localdomain")).
-
-% Test getting the command from a given string
-getCommand_test() ->
-	?assertEqual({"PRIVMSG", ["#bottesting"]}, getCommand("PRIVMSG #bottesting")).
-
-% Test getting the message from a given string
-getTrail_test() ->
-	{true, _, Rest} = getPrefix(":Mex!~a@a.kent.ac.uk PRIVMSG #bottesting : :"),
-	?assertEqual({true, " :", "PRIVMSG #bottesting"}, getTrail(Rest)),
-	{true, _, Rest} = getPrefix(":Mex!~a@a.kent.ac.uk PRIVMSG #bottesting : :"),
-	?assertEqual({true, " :", "PRIVMSG #bottesting"}, getTrail(Rest)).
-
-% Fuck knows
-getPrefix_test() ->
-	?assertEqual({true, "a", "b"}, getPrefix(":a b")),
-	?assertEqual({true, "a", "b"}, getPrefix(":a     b")),
-	?assertEqual({false, "", "b"}, getPrefix("b")).
-
-% Test getting the nick from a nick!host string
-getNick_test() ->
-	?assertEqual("graymalkin", getNick("graymalkin!sjc80@kestrel.kent.ac.uk")),
-	?assertEqual("graymalkin", getNick("graymalkin!/supporter/pdc/freenode")).
-
-% Tests isAdmin funciton
-isAdmin_test() ->
-	?assertEqual(false, isAdmin("graymalkin", [])),
-	?assertEqual(false, isAdmin("graymalkin", ["Tatskaari", "Mex"])),
-	?assertEqual(true, isAdmin("graymalkin", ["Tatskaari", "Mex", "graymalkin"])).
 
