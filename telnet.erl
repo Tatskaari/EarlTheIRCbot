@@ -4,13 +4,17 @@
 %Contains the record definitions
 -include("ircParser.hrl").
 
+% init the module then call the receive loop
 telnet() ->
 	register(pidListPid, spawn(telnet, pidList,[])),
 	loop().
 loop() ->
 	receive
+		%stops telnet happening outside of private chats
 		#privmsg{target="#" ++ Target, from=From, message="#telnet" ++ _} ->
 			sendPid ! {prvmsg, {From, "#" ++ Target, From ++ ": Please use private chat for telnet."}};
+
+		% Starts a session for the user: #telnet connect <HOST> <PORT>
 		#privmsg{from=From, message="#telnet connect " ++ K} ->
 			case string:tokens(K, " ") of
 				[Host, Port] ->
@@ -18,9 +22,16 @@ loop() ->
 				_ ->
 					noMatch
 			end;
+		
+		% Kills the session of the user: #telnet disconnect 
+		#privmsg{from=From, message="#telnet disconnect"} ->
+			pidListPid ! {sendMessage, {disconnect}, From};
+
+		% sends albert terry strings to the server: #telnet <STRING>
 		#privmsg{from=From, message="#telnet " ++ K} ->
 			Message = re:replace(K,"\\\\r\\\\n", "\r\n",[{return,list}]),
 			pidListPid ! {sendMessage, Message, From};
+
 		die ->
 			io:format("telnetPid :: EXIT~n"),
 			exit(self(), normal)
@@ -62,6 +73,7 @@ connect({ok, Socket})->
 connect({error, Reason}) ->
 	{error, Reason}.
 
+% each person should get their own socket and pid to receive data on. 
 receive_data(Socket, From) ->
 	receive
 		{tcp, Socket, Bin} ->
@@ -71,10 +83,13 @@ receive_data(Socket, From) ->
 			exit(self(), normal);
 		{command, Message, From} ->
 			gen_tcp:send(Socket, Message);
+		{command,{disconnect}, From} ->
+			io:format(From ++ ": DIEING  ::");
 		die ->
-			exit(self(), normal);
-		Wut ->
-			io:format("~p~n", [Wut])
+			io:format(From ++ ": DIEING  ::"),
+			pidListPid ! {remove, self()},
+			gen_tcp:close(Socket),
+			exit(self(), normal)
 	end,
 	receive_data(Socket, From).
 
@@ -95,11 +110,10 @@ pidList(PidList) ->
 			exit(self(), normal)
 	end,
 	pidList(PidList).
-	
+
 % helper functoin to send each pid a message
 sendPidsMessage([], _, _) ->
 	ok;
 sendPidsMessage([Head|Tail], Message, From) ->
-	io:format("TELNET SEND :: ~p~n", [Message]),
 	Head ! {command, Message, From},
 	sendPidsMessage(Tail, Message, From).
