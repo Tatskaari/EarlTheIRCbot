@@ -21,45 +21,34 @@ optimusPrime() ->
 % The entry point of the porgram
 primesTo(send, {K, From, Target}) ->
 	N = listToNum(K),
-			Primes = if
-				N<0 ->
-					"Input Error";
-				N>100 ->
-					"Input too large";
-				true ->
-					primesTo(N)
-			end,
-			PrintTerm = From ++ ": " ++ io_lib:format("~p",[Primes]),
-			case Target of
-				"#" ++ _ ->
-					sendPid ! {command, {"PRIVMSG", Target, PrintTerm}};
-				_ ->
-					sendPid ! {command, {"PRIVMSG", From, PrintTerm}}
-			end.
+	Primes = if
+		N<0 ->
+			"Input Error";
+		N>100 ->
+			"Input too large";
+		true ->
+			primesTo(N)
+	end,
+	PrintTerm = From ++ ": " ++ io_lib:format("~p",[Primes]),
+	sendPid ! #privmsg{from=From, target=Target, message=PrintTerm}.
 
 isPrime(send, {K, From, Target}) ->
 	N = listToNum(K),
-			Result = if
-				N<0 ->
-					"Input Error";
-				N>1000000000 ->
-					"Input too large";
-				true ->
-					isPrime(N)
-			end,
-			if
-				Result == true ->
-					PrintTerm = From ++ ": " ++ K ++ " is prime";
-				true ->
-					PrintTerm = From ++ ": " ++ K ++ " is devisable by " ++ io_lib:format("~p",[Result])
-			end,
-			case Target of
-				"#" ++ _ ->
-					sendPid ! {command, {"PRIVMSG", Target, PrintTerm}};
-				_ ->
-					sendPid ! {command, {"PRIVMSG", From, PrintTerm}}
-			end.
-
+	Result = if
+		N<0 ->
+			"Input Error";
+		N>1000000000 ->
+			"Input too large";
+		true ->
+			isPrime(N)
+	end,
+	if
+		Result == true ->
+			PrintTerm = From ++ ": " ++ K ++ " is prime";
+		true ->
+			PrintTerm = From ++ ": " ++ K ++ " is devisable by " ++ io_lib:format("~p",[Result])
+	end,
+	sendPid ! #privmsg{from=From, target=Target, message=PrintTerm}.
 
 % takes a string and turns it into an integer
 listToNum(List) ->

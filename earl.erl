@@ -90,6 +90,10 @@ send(Socket) ->
 					io:format("SENT: ~s", [M]),
 					ok = gen_tcp:send(Socket, M)
 			end;
+		#privmsg{target=Target, message=Message} ->
+			M = Command ++ " " ++ Target ++ " :" ++ Message ++ "\r\n",
+			io:format("SENT: ~s", [M]),
+			ok = gen_tcp:send(Socket, M);
 
 		#command{command=Command, data=Data} ->
 			M = Command ++ " " ++ Data ++ "\r\n",
