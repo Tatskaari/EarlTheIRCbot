@@ -1,8 +1,5 @@
 -module(ircParser).
--export([start/0, parse/0, lineParse/1]).
--import(optimusPrime, [optimusPrime/0]).
--import(time, [timer/0]).
--import(telnet, [telnet/0]).
+-export([parse/0, lineParse/1]).
 -include_lib("eunit/include/eunit.hrl").
 
 -define(NICK, "Earl").
@@ -11,13 +8,8 @@
 %Contains the record definitions
 -include("ircParser.hrl").
 
-
-start() ->
-	register(primePid, spawn(optimusPrime, optimusPrime, [])),
-	register(timerPid, spawn(timer, timer, [])),
-	register(telnetPid, spawn(telnet, telnet, [])),
-	parse().
-
+%Include Tests
+-include("ircParser_test.erl").
 
 % Starts passing the message around to the different handlers.
 parse() ->
@@ -33,10 +25,18 @@ parse() ->
 
 			% Commands which don't need admin
 			case Line of
-				% Join (#j)
+				% nick (#n <NICK>)
+				#privmsg{admin=true, message="#n " ++ Nick} ->
+					sendPid ! {command, {"NICK", Nick}};
+
+				% Join (#j <CHANNEL>)
 				#privmsg{admin=true, message="#j " ++ K} ->
 					sendPid ! {command, {"JOIN", K}};
 				
+				% Part (#p <CHANNEL>)
+				#privmsg{admin=true, message="#p " ++ Channel} ->
+					sendPid ! {command, {"PART", Channel}};
+
 				% Quit (#q [reason])
 				#privmsg{admin=true, message="#q " ++ K} ->
 					sendPid ! {command, {"QUIT", ":" ++ K}};
@@ -55,7 +55,7 @@ parse() ->
 				#privmsg{message="#t"} ->
 					timerPid ! Line;
 
-				% Telnet (#telnet)
+				% Telnet (#telnet <commands>)
 				#privmsg{message="#telnet " ++ _} ->
 					telnetPid ! Line;
 
@@ -67,7 +67,7 @@ parse() ->
 			end,
 		checkIndentResponce(re:run(T, "NOTICE AUTH :... Got Ident response"))
     end,
-    parse().
+    ?MODULE:parse().
 
 
 % Connects to the server after indent response [[ NEEDS REDOING ]]
@@ -123,7 +123,19 @@ lineParse(Str) ->
 	case Command of
 		"PRIVMSG" -> #privmsg{target=lists:nth(1, Params), from=getNick(Prefix),  admin=IsAdmin, message=Trail};
 		"PING" -> #ping{nonce=Trail};
-		_ -> false		% We don't know about everything - let's not deal with it.
+		"MODE" -> #mode{modes=Trail};
+		"NOTICE" -> 
+			io:format("NOTICE: ~s~n", [Trail]),
+			#notice{target=lists:nth(1, Params), message=Trail};
+		%MOTD, print it and throw it away %
+		"372"  -> io:format("MOTD: ~s~n", [Trail]), {};
+		%start of MOTD
+		"375" -> {};
+		%end of MOTD
+		"376" -> {};
+		% We don't know about everything - let's not deal with it.
+
+		A -> io:format("WARNING: Un-recognised command '~s': '~s'~n", [Command, Str]),{}
 	end.
 
 
@@ -139,47 +151,4 @@ isAdmin(Str, List) ->
 	end.
 	
 
-% =============================================================================
-%
-%                                UNIT TESTING
-%
-% =============================================================================
-
-% Test parsing of PRIVMSG lines
-lineParse_privmsg_test() ->
-	?assertEqual(#privmsg{message="Hello everyone!", from="CalebDelnay", admin=false, target="#mychannel"} ,lineParse(":CalebDelnay!calebd@localhost PRIVMSG #mychannel :Hello everyone!")),
-	?assertEqual(#privmsg{message="Hello everyone!", from="graymalkin", admin=true, target="#mychannel"} ,lineParse(":graymalkin!calebd@localhost PRIVMSG #mychannel :Hello everyone!")),
-	?assertEqual(#privmsg{message=":", from="Mex", admin=true, target="#bottesting"}, lineParse(":Mex!~a@a.kent.ac.uk PRIVMSG #bottesting ::")).
-
-% Test parsing of PING requests
-lineParse_ping_test() ->
-	?assertEqual(#ping{nonce="irc.localhost.localdomain"} ,lineParse("PING :irc.localhost.localdomain")).
-
-% Test getting the command from a given string
-getCommand_test() ->
-	?assertEqual({"PRIVMSG", ["#bottesting"]}, getCommand("PRIVMSG #bottesting")).
-
-% Test getting the message from a given string
-getTrail_test() ->
-	{true, _, Rest} = getPrefix(":Mex!~a@a.kent.ac.uk PRIVMSG #bottesting : :"),
-	?assertEqual({true, " :", "PRIVMSG #bottesting"}, getTrail(Rest)),
-	{true, _, Rest} = getPrefix(":Mex!~a@a.kent.ac.uk PRIVMSG #bottesting : :"),
-	?assertEqual({true, " :", "PRIVMSG #bottesting"}, getTrail(Rest)).
-
-% Fuck knows
-getPrefix_test() ->
-	?assertEqual({true, "a", "b"}, getPrefix(":a b")),
-	?assertEqual({true, "a", "b"}, getPrefix(":a     b")),
-	?assertEqual({false, "", "b"}, getPrefix("b")).
-
-% Test getting the nick from a nick!host string
-getNick_test() ->
-	?assertEqual("graymalkin", getNick("graymalkin!sjc80@kestrel.kent.ac.uk")),
-	?assertEqual("graymalkin", getNick("graymalkin!/supporter/pdc/freenode")).
-
-% Tests isAdmin funciton
-isAdmin_test() ->
-	?assertEqual(false, isAdmin("graymalkin", [])),
-	?assertEqual(false, isAdmin("graymalkin", ["Tatskaari", "Mex"])),
-	?assertEqual(true, isAdmin("graymalkin", ["Tatskaari", "Mex", "graymalkin"])).
 
