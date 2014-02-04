@@ -152,6 +152,7 @@ lineParse(Str) ->
 		"332"  -> io:format("JOIN: Topic: ~s~n", [Trail]);
 		"333"  -> io:format("JOIN: ~s~n", [Trail]); % bugged
 		"353"  -> io:format("JOIN: Users: ~s~n", [Trail]);
+		"366"  -> io:format("JOIN: End of users list.~n");
 		
 		% Nick already in use
 		"433" -> io:format("ERROR: Nick already in use."), {};
