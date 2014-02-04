@@ -2,3 +2,5 @@
 -record(privmsg, {target, from, admin, message}).
 -record(ping, {nonce}).
 -record(user, {nick, username, host}).
+-record(mode, {modes}).
+-record(notice, {target, message}).
