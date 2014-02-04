@@ -2,7 +2,7 @@
 -export([parse/0, parse/1, lineParse/1]).
 -include_lib("eunit/include/eunit.hrl").
 
--define(NICK, "Earl").
+-define(NICK, "SimonsEarl").
 -define(USER, "Tatskaari Sir_Earl Sir_Earl Sir_Earl").
 
 %Contains the record definitions
@@ -43,7 +43,7 @@ parse(PluginsChans) ->
 					% Ping
 					#ping{nonce=K} ->
 						sendPid ! {command, {"PONG", K}};
-						<a href=""></a>
+
 					% We don't know about everything - let's not deal with it.	
 					_Default -> false 
 				end

@@ -6,7 +6,7 @@
 
 telnet() ->
 	receive
-		#privmsg{target="#" ++ Target, from=From} ->
+		#privmsg{target="#" ++ Target, from=From, message="#telnet" ++ _} ->
 			sendPid ! {prvmsg, {From, "#" ++ Target, From ++ ": Please use private chat for telnet."}};
 		#privmsg{target=Target, from=From, message="#telnet connect " ++ K} ->
 			case string:tokens(K, " ") of
