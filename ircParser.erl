@@ -50,7 +50,7 @@ parse(PluginsChans) ->
 								M = io_lib:format("~p", [Chan]),
 								sendPid ! {privmsg, {From, To, "Plugin: " ++ M}}
 							end,
-							lists:foreach(ListP	lugins, PluginsChans);
+							lists:foreach(ListPlugins, PluginsChans);
 
 						% We don't know about everything - let's not deal with it.	
 						_Default -> false 
@@ -112,7 +112,7 @@ lineParse(Str) ->
 	{_HasTrail, Trail, CommandsAndParams} = getTrail(Rest),
 	{Command, Params} = getCommand(CommandsAndParams),
 	Nick = getNick(Prefix),
-	IsAdmin = isAdmin(Nick, ["graymalkin", "Tatskaari", "Mex", "xand", "Tim"]),
+	IsAdmin = isAdmin(Nick, ["graymalkin", "Tatskaari", "xand", "Tim"]),
 	case Command of
 		"PRIVMSG" -> #privmsg{target=lists:nth(1, Params), from=Nick,  admin=IsAdmin, message=Trail};
 		"PING" -> #ping{nonce=Trail};
@@ -120,6 +120,7 @@ lineParse(Str) ->
 		"NOTICE" -> 
 			io:format("NOTICE: ~s~n", [Trail]),
 			#notice{target=lists:nth(1, Params), message=Trail};
+
 		% MOTD, print it and throw it away %
 		"372"  -> io:format("MOTD: ~s~n", [Trail]), {};
 		
@@ -130,23 +131,26 @@ lineParse(Str) ->
 		"376" -> {};
 		
 		% Welcome
-		"001" -> io:format("INFO: ~s~n", [Trail]), {};
-		
-		% Welcome
-		"002" -> io:format("INFO: ~s~n", [Trail]), {};
-		
-		% Welcome
-		"003" -> io:format("INFO: ~s~n", [Trail]), {};
+		"001" -> io:format("SERV: ~s~n", [Trail]), {};
+		"002" -> io:format("SERV: ~s~n", [Trail]), {};
+		"003" -> io:format("SERV: ~s~n", [Trail]), {};
+		"004" -> io:format("SERV: ~s~n", [Trail]), {};
 
-		% Welcome
-		"004" -> io:format("INFO: ~s~n", [Trail]), {};
+		% Server options
+		"005" -> io:format("SERV: ~s~n", [Trail]), {};
+
+		% Server users
+		"251" -> io:format("USERS: ~s~n", [Trail]), {};
+		"252" -> io:format("USERS: ~s~n", [Trail]), {};
+		"254" -> io:format("USERS: ~s~n", [Trail]), {};
+		"255" -> io:format("USERS: ~s~n", [Trail]), {};
+		"265" -> io:format("USERS: ~s~n", [Trail]), {};
+		"266" -> io:format("USERS: ~s~n", [Trail]), {};
 		
 		% Nick already in use
-		"433" -> io:format("ERROR: Nick already in use."),
-			sendPid ! {privmsg, {Nick, lists:nth(1, Params), "Error: Nick already in use."}};
+		"433" -> io:format("ERROR: Nick already in use."), {};
 
-		"436" -> io:format("ERROR: Nick collision."),
-			sendPid ! {privmsg, {Nick, lists:nth(1, Params), "Error: Nick collision."}};
+		"436" -> io:format("ERROR: Nick collision."), {};
 
 		% Unknown commands
 		A -> io:format("WARNING: Un-recognised command '~s': '~s'~n", [Command, Str]),{}
