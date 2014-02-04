@@ -23,6 +23,6 @@ start(SendPid) ->
 		#privmsg{admin=true, message="#q"} ->
 			SendPid ! {command, {"QUIT", ":Earl out"}};
 
-		Default -> io:format("Threw it away!~n",[]),false % We don't know about everything - let's not deal with it.
+		Default -> false % We don't know about everything - let's not deal with it.
 	end,
 	?MODULE:start(SendPid).
