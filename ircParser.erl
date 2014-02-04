@@ -1,11 +1,8 @@
 -module(ircParser).
--export([start/0, parse/0, lineParse/1]).
--import(optimusPrime, [optimusPrime/0]).
--import(time, [timer/0]).
--import(telnet, [telnet/0]).
+-export([parse/0, lineParse/1]).
 -include_lib("eunit/include/eunit.hrl").
 
--define(NICK, "Earl").
+-define(NICK, "mextest").
 -define(USER, "Tatskaari Sir_Earl Sir_Earl Sir_Earl").
 
 %Contains the record definitions
@@ -13,13 +10,6 @@
 
 %Include Tests
 -include("ircParser_test.erl").
-
-start() ->
-	register(primePid, spawn(optimusPrime, optimusPrime, [])),
-	register(timerPid, spawn(timer, timer, [])),
-	register(telnetPid, spawn(telnet, telnet, [])),
-	parse().
-
 
 % Starts passing the message around to the different handlers.
 parse() ->

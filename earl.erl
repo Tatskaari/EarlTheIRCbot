@@ -1,9 +1,12 @@
 -module(earl).
--export([main/0, connect/0, buffer/0, send/1, getLine/1]).
--import(ircParser, [start/0]).
+-export([main/0, buffer/0, send/1, getLine/1]).
+-import(ircParser, [parse/0]).
+-import(optimusPrime, [optimusPrime/0]).
+-import(time, [timer/0]).
+-import(telnet, [telnet/0]).
 -include_lib("eunit/include/eunit.hrl").
 
--define(HOSTNAME, "irc.cs.kent.ac.uk").
+-define(HOSTNAME, "localhost").
 -define(PORT, 6667).
 
 
@@ -12,8 +15,11 @@
 main() ->
 	% Spawn the processes for connecting and building commmands
 	register(bufferPid, spawn(earl, buffer, [])),        
-	register(connectPid, spawn(earl, connect, [])),
+	register(connectPid, spawn(earlConnection, connect, [?HOSTNAME, ?PORT])),
+	register(parserPid, spawn(ircParser, parse, [])),
 	register(mainPid, self()),
+
+	start(),
 
 	% Wait until a process wants to kill the program and then tell all processes to an hero 
 	receive
@@ -25,33 +31,10 @@ main() ->
 			exit(self(), normal)
 	end.
 
-
-% Opens a connectoin to the server
-connect({ok, Socket}) ->
-	register(sendPid, SendPid = spawn(earl, send, [Socket])),
-	register(parserPid, spawn(ircParser, start, [])),
-	receive_data(Socket);
-connect({error, Reason}) ->
-	io:format("ERROR - Could not connect: ~s~n", [Reason]).
-connect() ->
-	io:format("Connecting to ~s~n", [?HOSTNAME]),
-	connect(gen_tcp:connect(?HOSTNAME, ?PORT, [], 1000)).
-
-
-% Receives data from the server and passes it to buffer
-receive_data(Socket) ->
-	receive
-		die ->
-			io:format("connectPid :: EXIT~n"),
-			exit(self(), normal);
-	    {tcp, Socket, Bin} -> 
-			bufferPid ! Bin;
-	    {tcp_closed, Socket} ->
-			io:format("Connection closed.~n",[]),
-			mainPid ! die
-	end,
-    receive_data(Socket).
-
+start() ->
+	register(primePid, spawn(optimusPrime, optimusPrime, [])),
+	register(timerPid, spawn(timer, timer, [])),
+	register(telnetPid, spawn(telnet, telnet, [])).
 
 
 getLine(A) ->
