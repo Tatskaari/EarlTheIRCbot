@@ -32,21 +32,28 @@ parse(PluginsChans) ->
 			case Line of
 				{} -> {};
 				_A ->
+					% Anonnomous function (F) to send line to every registered plugin
+					F = fun(Chan) -> Chan ! Line end,
+					% For each plugin run F against it
+					lists:foreach(F, PluginsChans),
 
-				% Anonnomous function (F) to send line to every registered plugin
-				F = fun(Chan) -> Chan ! Line end,
-				% For each plugin run F against it
-				lists:foreach(F, PluginsChans),
+					% Built in commands which are required for the protocol
+					case Line of
+						% Ping
+						#ping{nonce=K} ->
+							sendPid ! {command, {"PONG", K}};
 
-				% Built in commands which are required for the protocol
-				case Line of
-					% Ping
-					#ping{nonce=K} ->
-						sendPid ! {command, {"PONG", K}};
+						#privmsg{target=To, from=From, message="#plugins" ++ _} ->
+							io:format("~p~p~n~p~n", [To, From, Line]),
+							ListPlugins = fun(Chan) ->
+								M = io_lib:format("~p", [Chan]),
+								sendPid ! {privmsg, {From, To, "Plugin: " ++ M}}
+							end,
+							lists:foreach(ListP	lugins, PluginsChans);
 
-					% We don't know about everything - let's not deal with it.	
-					_Default -> false 
-				end
+						% We don't know about everything - let's not deal with it.	
+						_Default -> false 
+					end
 			end,
 		checkIndentResponce(re:run(T, "NOTICE AUTH :... Got Ident response"))
     end,
