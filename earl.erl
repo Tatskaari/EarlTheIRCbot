@@ -6,10 +6,8 @@
 -import(telnet, [telnet/0]).
 -include_lib("eunit/include/eunit.hrl").
 -include("ircParser.hrl").
-
--define(HOSTNAME, "irc.cs.kent.ac.uk").
--define(PORT, 6667).
-
+-include("earl.hrl").
+-include_lib("earl_test.erl").
 
 
 % Spawns the buffer and the connections processes
@@ -92,3 +90,21 @@ send(Socket) ->
 			end
 	end,
 	send(Socket).
+
+setting_server() -> setting_server(dict:new()).
+
+setting_server(Dict) ->
+	receive
+		#setVal{name=Name, value=Value} -> 
+			setting_server(dict:store(Name, Value, Dict));
+		#getVal{name=Name, return_chan=Chan} ->
+			case dict:is_key(Name, Dict) of
+				true ->
+					Chan ! dict:fetch(Name, Dict);
+				false ->
+					Chan ! false
+			end;
+		die ->
+			exit(self(), normal)	
+	end,
+	setting_server(Dict).
