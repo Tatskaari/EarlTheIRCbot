@@ -2,8 +2,7 @@
 -export([parse/0, parse/1, lineParse/1]).
 -include_lib("eunit/include/eunit.hrl").
 
-
--define(NICK, "SimonsEarl").
+-define(NICK, "Earl").
 -define(USER, "Tatskaari Sir_Earl Sir_Earl Sir_Earl").
 
 %Contains the record definitions
