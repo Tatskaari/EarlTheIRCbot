@@ -18,9 +18,7 @@ parse(PluginsChans) ->
     receive
 		die ->
 			io:format("parserPid :: EXIT~n"),
-			primePid ! die,
-			timerPid ! die,
-			telnetPid ! die,
+			lists:foreach(fun(Pid) -> Pid ! die end, PluginsChans),
 			exit(self(), normal);
 
     	#registerPlugin{chan=Pid} ->
