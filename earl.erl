@@ -4,9 +4,9 @@
 -import(optimusPrime, [optimusPrime/0]).
 -import(time, [timer/0]).
 -import(telnet, [telnet/0]).
--include_lib("eunit/include/eunit.hrl").
 -include("ircParser.hrl").
 -include("earl.hrl").
+-include_lib("eunit/include/eunit.hrl").
 -include_lib("earl_test.erl").
 
 

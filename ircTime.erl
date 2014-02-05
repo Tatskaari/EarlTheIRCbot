@@ -1,5 +1,5 @@
 -module(ircTime).
--export([ircTime/0]).
+-export([ircTime/0, date_to_string/1]).
 -include("ircParser.hrl").
 
 ircTime() ->
@@ -9,18 +9,21 @@ ircTime() ->
 		% [From, _, _, Target, "#t"]  ->
 		#privmsg{target=Target, from=From, message="#t"} ->
 			io:format("TIME :: Got message~n"),
-			{{Yeart,Montht,Dayt},{Hourt,Mint,Sect}} = erlang:localtime(),
-							case Dayt of
-								1 -> DayPrfx = "st";
-								2 -> DayPrfx = "nd";
-								3 -> DayPrfx = "rd";
-								_ -> DayPrfx = "th"
-							end,
-
-							Month = lists:nth(Montht, ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]), 
-							IntToString = fun(A) -> lists:flatten(io_lib:format("~p", [A])) end, % converts the numbers from 5 -> "5"
-							[Hour, Min, Sec, Day, Year] = lists:map(IntToString, [Hourt, Mint, Sect, Dayt, Yeart]), % aplies IntToString to each element in the list
-							Message = From ++ ": " ++ Hour ++ ":" ++ Min ++ ":" ++ Sec ++ ", " ++ Day ++ DayPrfx ++ " of " ++ Month ++ ", " ++ Year,
-							sendPid ! #privmsg{from=From, target=Target, message=Message}
+			Message = From ++ ": " ++ date_to_string(erlang:localtime()),
+			sendPid ! #privmsg{from=From, target=Target, message=Message}
 	end,
 	ircTime().
+
+date_to_string({Date, Time}) ->
+	{Yeart,Montht,Dayt} = Date,
+	{Hourt,Mint,Sect} = Time,
+	case Dayt of
+		1 -> DayPrfx = "st";
+		2 -> DayPrfx = "nd";
+		3 -> DayPrfx = "rd";
+		_ -> DayPrfx = "th"
+	end,
+	Month = lists:nth(Montht, ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]), 
+	IntToString = fun(A) -> lists:flatten(io_lib:format("~p", [A])) end,
+	[Hour, Min, Sec, Day, Year] = lists:map(IntToString, [Hourt, Mint, Sect, Dayt, Yeart]), % aplies IntToString to each element in the list
+	Hour ++ ":" ++ Min ++ ":" ++ Sec ++ ", " ++ Day ++ DayPrfx ++ " of " ++ Month ++ ", " ++ Year.

@@ -186,7 +186,7 @@ lineParse(Str) ->
 		% Channel join
 		"JOIN" -> print("JOIN", green, "~s joined ~s~n", [Nick, Trail]), {};
 		"332"  -> print("JOIN", green, "Topic: ~s~n", [Trail]), {};
-		"333"  -> print("JOIN", green, "~s~n", [lists:nth(1, Params)]), {};
+		"333"  -> print("JOIN", green, "Topic set by ~s at ~s~n", [lists:nth(3, Params), msToDate(lists:nth(4, Params)) ]), {};
 		"353"  -> print("JOIN", green, "Users: ~s~n", [Trail]), {};
 		"366"  -> print("JOIN", green, "End of users list~n", []), {};
 
@@ -204,6 +204,14 @@ lineParse(Str) ->
 		% Unknown commands
 		_A -> print("WARN", yellow, "Un-recognised command '~s': '~s'~n", [Command, Str]), {}
 	end.
+
+% Thanks StackOverflow! http://stackoverflow.com/questions/825151/convert-timestamp-to-datetime-in-erlang
+msToDate(Str) ->
+	{ InS, _Rest } = string:to_integer(Str), 
+	BaseDate      = calendar:datetime_to_gregorian_seconds({{1970,1,1},{0,0,0}}),
+	Seconds       = BaseDate + InS,
+	{Date, Time}  = calendar:gregorian_seconds_to_datetime(Seconds),
+	ircTime:date_to_string({Date, Time}).
 
  
 % Prints a message in a given colour

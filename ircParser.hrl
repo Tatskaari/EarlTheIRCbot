@@ -17,3 +17,4 @@
 
 % Data types
 %-record(user, {nick, username, host}).
+
