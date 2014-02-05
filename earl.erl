@@ -14,13 +14,17 @@
 main() ->
 	% Spawn the processes for connecting and building commmands
 	register(bufferPid, spawn(earl, buffer, [])),        
-	register(connectPid, spawn(earlConnection, connect, [?HOSTNAME, ?PORT])),
+	register(connectPid, spawn(earlConnection, connect, [?HOSTNAME, ?PORT, self()])),
 	register(parserPid, spawn(ircParser, parse, [])),
 	register(mainPid, self()),
 	register(settings, spawn(fun() -> setting_server() end)),
 
 	% Start the plugins
 	start(),
+
+	receive
+		connected -> true
+	end,
 
 	% Wait until a process wants to kill the program and then tell all processes to an hero 
 	receive
