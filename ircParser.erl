@@ -1,10 +1,11 @@
 -module(ircParser).
--export([parse/0, parse/1, lineParse/1]).
+-export([parse/0, parse/1, lineParse/1, print/4]).
 -include_lib("eunit/include/eunit.hrl").
 
 -include("earl.hrl").
 -define(NICK, "SimonsEarl").
 -define(USER, "Tatskaari Sir_Earl Sir_Earl Sir_Earl").
+-define(COLORS, true).
 
 %Contains the record definitions
 -include("ircParser.hrl").
@@ -145,23 +146,23 @@ lineParse(Str) ->
 		"PING" -> #ping{nonce=Trail};
 		"MODE" -> #mode{modes=Trail};
 		"NOTICE" -> 
-			io:format("NOTICE: ~s~n", [Trail]),
+			print("NOTICE", blue, "~s~n", [Trail]),
 			#notice{target=lists:nth(1, Params), message=Trail};
 
 		% MOTD, print it and throw it away %
-		"372"  -> io:format("MOTD: ~s~n", [Trail]), {};
+		"372"  -> print("MOTD", green, "~s~n", [Trail]), {};
 		
 		% Start of MOTD
 		"375" -> {};
-		
+			
 		% End of MOTD
 		"376" -> {};
 		%welcome
-		"001" -> io:format("INFO: ~s~n", [Trail]), {};
+		"001" -> print("INFO", blue, "~s~n", [Trail]), {};
 		%welcome
-		"002" -> io:format("INFO: ~s~n", [Trail]), {};
+		"002" -> print("INFO", blue, "~s~n", [Trail]), {};
 		%welcome
-		"003" -> io:format("INFO: ~s~n", [Trail]), {};
+		"003" -> print("INFO", blue, "~s~n", [Trail]), {};
 		%RPL_MYINFO
 		"004" ->
 			settings ! #setVal{name=server_name, value=lists:nth(2, Params)},
@@ -172,34 +173,56 @@ lineParse(Str) ->
 			%TODO: this in incomplete for some servers
 
 		% Server options
-		"005" -> io:format("SERV: ~s~n", [Trail]), {};
+		"005" -> print("SERV", green, "~s~n", [Trail]), {};
 
 		% Server users
-		"251" -> io:format("USERS: ~s~n", [Trail]), {};
-		"252" -> io:format("USERS: ~s~n", [Trail]), {};
-		"254" -> io:format("USERS: ~s~n", [Trail]), {};
-		"255" -> io:format("USERS: ~s~n", [Trail]), {};
-		"265" -> io:format("USERS: ~s~n", [Trail]), {};
-		"266" -> io:format("USERS: ~s~n", [Trail]), {};
+		"251" -> print("USERS", green, "~s~n", [Trail]), {};
+		"252" -> print("USERS", green, "~s~n", [Trail]), {};
+		"254" -> print("USERS", green, "~s~n", [Trail]), {};
+		"255" -> print("USERS", green, "~s~n", [Trail]), {};
+		"265" -> print("USERS", green, "~s~n", [Trail]), {};
+		"266" -> print("USERS", green, "~s~n", [Trail]), {};
 
 		% Channel join
-		"JOIN" -> io:format("JOIN: ~s joined ~s~n", [Nick, Trail]);
-		"332"  -> io:format("JOIN: Topic: ~s~n", [Trail]);
-		"333"  -> io:format("JOIN: ~s~n", [lists:nth(1, Params)]);
-		"353"  -> io:format("JOIN: Users: ~s~n", [Trail]);
-		"366"  -> io:format("JOIN: End of users list.~n");
+		"JOIN" -> print("JOIN", green, "~s joined ~s~n", [Nick, Trail]), {};
+		"332"  -> print("JOIN", green, "Topic: ~s~n", [Trail]), {};
+		"333"  -> print("JOIN", green, "~s~n", [lists:nth(1, Params)]), {};
+		"353"  -> print("JOIN", green, "Users: ~s~n", [Trail]), {};
+		"366"  -> print("JOIN", green, "End of users list~n", []), {};
 
 		% Part
-		"PART" -> io:format("PART: ~s parted ~s~n", [Nick, lists:nth(1, Params)]);
+		"PART" -> print("PART", green, "~s parted ~s~n", [Nick, lists:nth(1, Params)]), {};
 
 		% Quits
-		"QUIT" -> io:format("QUIT: ~s quit (~s)~n", [Nick, Trail]);
+		"QUIT" -> print("QUIT", green, "~s quit (~s)~n", [Nick, Trail]), {};
 		
 		% Nick already in use
-		"433" -> io:format("ERROR: Nick already in use."), {};
+		"433" -> print("ERROR", red, "Nick already in use.", []), {};
 
-		"436" -> io:format("ERROR: Nick collision."), {};
+		"436" -> print("ERROR", red, "Nick collision.", []), {};
 
 		% Unknown commands
-		_A -> io:format("WARNING: Un-recognised command '~s': '~s'~n", [Command, Str]),{}
+		_A -> print("WARN", yellow, "Un-recognised command '~s': '~s'~n", [Command, Str]), {}
 	end.
+
+ 
+% Prints a message in a given colour
+print(Catagory, Color, Message, Params) when ?COLORS ->
+	case Color of
+		red ->
+			io:format("\e[1;31m" ++ Catagory ++ "\e[0;37m" ++ ": " ++ Message, Params);
+
+		green ->
+			io:format("\e[1;32m" ++ Catagory ++ "\e[0;37m" ++ ": " ++ Message, Params);
+
+		yellow ->
+			io:format("\e[1;33m" ++ Catagory ++ "\e[0;37m" ++ ": " ++ Message, Params);
+
+		blue ->
+			io:format("\e[1;36m" ++ Catagory ++ "\e[0;37m" ++ ": " ++ Message, Params);
+
+		_Default ->
+			io:format(Catagory ++ ": " ++ Message, Params)
+	end;
+print(Catagory, Color, Message, Params) ->
+	io:format(Catagory ++ ": " ++ Message, Params).

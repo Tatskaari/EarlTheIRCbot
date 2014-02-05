@@ -18,7 +18,6 @@ main() ->
 	register(parserPid, spawn(ircParser, parse, [])),
 	register(mainPid, self()),
 	register(settings, spawn(fun() -> setting_server() end)),
-	register(getAdminPid, spawn(ircParser, getAdmin, [])),
 
 	% Start the plugins
 	start(),
