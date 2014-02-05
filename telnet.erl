@@ -34,6 +34,7 @@ loop() ->
 
 		die ->
 			io:format("telnetPid :: EXIT~n"),
+			pidListPid ! die,
 			exit(self(), normal)
 	end,
 	loop().
@@ -105,8 +106,9 @@ pidList(PidList) ->
 		{getList, Pid} ->
 			io:format("~p~n", PidList);
 		{sendMessage, Message, From} ->
-			sendPidsMessage(PidList, Message, From);
+			lists:foreach(fun(Pid) -> Pid ! {command, Message, From} end, PidList);
 		die ->
+			lists:foreach(fun(Pid) -> Pid ! die end, PidList),
 			exit(self(), normal)
 	end,
 	pidList(PidList).
