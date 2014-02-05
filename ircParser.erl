@@ -220,6 +220,22 @@ lineParse(Str) ->
 		_A -> print("WARN", yellow, "Un-recognised command '~s': '~s'~n", [Command, Str]), {}
 	end.
 
+storeChanInfo(ChannelName, Param, Data) ->
+	channel_info ! #getVal{name=ChannelName, return_chan=self()},
+	receive
+		#retVal{name=ChannelName, value=X} ->
+			%x should hold a setting server for this chan, update it's value.
+			X ! #setVal{name=Param, value=Data},
+			{};
+		#noVal{name=ChannelName} ->
+			% we better start a settings server to hold details about this chan
+			NewSettingServer = spawn(earl, setting_server, []),
+			channel_info ! #setVal{name=ChannelName, value=NewSettingServer},
+			NewSettingServer ! #setVal{name=Param, value=Data},
+			{}
+	end.
+
+
 % Thanks StackOverflow! http://stackoverflow.com/questions/825151/convert-timestamp-to-datetime-in-erlang
 msToDate(Str) ->
 	{ InS, _Rest } = string:to_integer(Str), 
