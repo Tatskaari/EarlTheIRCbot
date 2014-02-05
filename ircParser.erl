@@ -26,7 +26,17 @@ parse(PluginsChans) ->
 		    ?MODULE:parse([{Chan,Name}|PluginsChans]);
 
 		% deregister plugins
-		
+		#deregisterPlugin{name=Name} ->
+			io:format("UNLOADING MODULE : ~s~n", [Name]),
+			F = fun({Chan, N}) ->
+					case {Chan, N} of
+						{Chan, Name} ->
+							Chan ! die,
+							?MODULE:parse(PluginsChans -- [{Chan, Name}]);
+						_Default -> false 
+					end
+				end,
+			lists:foreach(F, PluginsChans);
 
 
 		T->
@@ -45,13 +55,16 @@ parse(PluginsChans) ->
 						#ping{nonce=K} ->
 							sendPid ! #pong{nonce=K};
 
-						#privmsg{from=From, target=To, message="#plugins" ++ _} ->
+						#privmsg{from=From, target=To, message="#plugins"} ->
 							io:format("~p~p~n~p~n", [To, From, Line]),
 							ListPlugins = fun(Chan) ->
 								M = io_lib:format("~p", [Chan]),
 								sendPid ! #privmsg{target=To, message=("Plugin: " ++ M)}
 							end,
 							lists:foreach(ListPlugins, PluginsChans);
+
+						#privmsg{from=From, target=To, message="#unload " ++ ModuleName} ->
+							self() ! #deregisterPlugin{name=ModuleName};
 
 						% We don't know about everything - let's not deal with it.	
 						_Default -> false 
