@@ -3,9 +3,6 @@
 -include_lib("eunit/include/eunit.hrl").
 
 -include("earl.hrl").
--define(NICK, "SimonsEarl").
--define(USER, "Tatskaari Sir_Earl Sir_Earl Sir_Earl").
--define(COLORS, true).
 
 %Contains the record definitions
 -include("ircParser.hrl").
@@ -32,7 +29,7 @@ parse(PluginsChans) ->
 		T->
 			Line = lineParse(T),
 			case Line of
-				{} -> {};
+				{} -> false;
 				_A ->
 					% Anonnomous function (F) to send line to every registered plugin
 					F = fun(Chan) -> Chan ! Line end,
@@ -56,20 +53,9 @@ parse(PluginsChans) ->
 						% We don't know about everything - let's not deal with it.	
 						_Default -> false 
 					end
-			end,
-		checkIndentResponce(re:run(T, "NOTICE AUTH :... Got Ident response"))
+			end
     end,
     ?MODULE:parse(PluginsChans).
-
-
-% Connects to the server after indent response [[ NEEDS REDOING ]]
-checkIndentResponce({match, [_]}) ->
-	sendPid ! #user{user=?USER},
-	sendPid ! #nick{nick=?NICK},
-	true;
-checkIndentResponce(_) ->
-	false.
-
 
 % Get the command part of a line
 % Produces tuple: {HasPrefix, Prefix, Rest}
@@ -184,8 +170,37 @@ lineParse(Str) ->
 		"266" -> print("USERS", green, "~s~n", [Trail]), {};
 
 		% Channel join
-		"JOIN" -> print("JOIN", green, "~s joined ~s~n", [Nick, Trail]), {};
-		"332"  -> print("JOIN", green, "Topic: ~s~n", [Trail]), {};
+		"JOIN" -> 
+			print("JOIN", green, "~s joined ~s~n", [Nick, Trail]),
+			channel_info ! #getVal{name=Trail, return_chan=self()},
+			receive
+				#retVal{name=Trail, value=X} ->
+					%x should hold a setting server for this chan, update it's value.
+					X ! #setVal{name=name, value=Trail},
+					{};
+				#noVal{name=Trail} ->
+					% we better start a settings server to hold details about this chan
+					NewSettingServer = spawn(earl, setting_server, []),
+					channel_info ! #setVal{name=Trail, value=NewSettingServer},
+					NewSettingServer ! #setVal{name=name, value=Trail},
+					{}
+			end;
+		"332"  ->
+			print("JOIN", green, "Topic: ~s~n", [Trail]), {},
+			ChannelName = lists:nth(1, Params),
+			channel_info ! #getVal{name=ChannelName, return_chan=self()},
+			receive
+				#retVal{name=ChannelName, value=X} ->
+					%x should hold a setting server for this chan, update it's value.
+					X ! #setVal{name=topic, value=Trail},
+					{};
+				#noVal{name=ChannelName} ->
+					% we better start a settings server to hold details about this chan
+					NewSettingServer = spawn(earl, setting_server, []),
+					channel_info ! #setVal{name=ChannelName, value=NewSettingServer},
+					NewSettingServer ! #setVal{name=topic, value=Trail},
+					{}
+			end;
 		"333"  -> print("JOIN", green, "Topic set by ~s at ~s~n", [lists:nth(3, Params), msToDate(lists:nth(4, Params)) ]), {};
 		"353"  -> print("JOIN", green, "Users: ~s~n", [Trail]), {};
 		"366"  -> print("JOIN", green, "End of users list~n", []), {};

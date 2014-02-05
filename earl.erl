@@ -1,5 +1,5 @@
 -module(earl).
--export([main/0, buffer/0,buffer/1, send/1, getLine/1]).
+-export([main/0, buffer/0,buffer/1, send/1, getLine/1, setting_server/0]).
 -import(ircParser, [parse/0]).
 -import(optimusPrime, [optimusPrime/0]).
 -import(time, [timer/0]).
@@ -14,13 +14,22 @@
 main() ->
 	% Spawn the processes for connecting and building commmands
 	register(bufferPid, spawn(earl, buffer, [])),        
-	register(connectPid, spawn(earlConnection, connect, [?HOSTNAME, ?PORT])),
+	register(connectPid, spawn(earlConnection, connect, [?HOSTNAME, ?PORT, self()])),
 	register(parserPid, spawn(ircParser, parse, [])),
 	register(mainPid, self()),
 	register(settings, spawn(fun() -> setting_server() end)),
+	register(channel_info, spawn(fun() -> setting_server() end)),
 
 	% Start the plugins
 	start(),
+
+	receive
+		connected -> true
+	end,
+
+	sendPid ! #user{user=?USER},
+	sendPid ! #nick{nick=?NICK},
+	sendPid ! #join{channel="#bottesting"},
 
 	% Wait until a process wants to kill the program and then tell all processes to an hero 
 	receive
@@ -154,9 +163,9 @@ setting_server(Dict) ->
 		#getVal{name=Name, return_chan=Chan} ->
 			case dict:is_key(Name, Dict) of
 				true ->
-					Chan ! dict:fetch(Name, Dict);
+					Chan ! #retVal{name=Name, value=dict:fetch(Name, Dict)};
 				false ->
-					Chan ! false
+					Chan ! #noVal{name=Name}
 			end;
 		die ->
 			io:format("settings :: EXIT~n"),
