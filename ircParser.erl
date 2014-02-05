@@ -210,16 +210,16 @@ lineParse(Str) ->
 print(Catagory, Color, Message, Params) when ?COLORS ->
 	case Color of
 		red ->
-			io:format("\e[1;31m" ++ Catagory ++ "\e[0;37m" ++ ": " ++ Message, Params);
+			io:format("\e[0;31m" ++ Catagory ++ "\e[0;37m" ++ ": " ++ Message, Params);
 
 		green ->
-			io:format("\e[1;32m" ++ Catagory ++ "\e[0;37m" ++ ": " ++ Message, Params);
+			io:format("\e[0;32m" ++ Catagory ++ "\e[0;37m" ++ ": " ++ Message, Params);
 
 		yellow ->
-			io:format("\e[1;33m" ++ Catagory ++ "\e[0;37m" ++ ": " ++ Message, Params);
+			io:format("\e[0;33m" ++ Catagory ++ "\e[0;37m" ++ ": " ++ Message, Params);
 
 		blue ->
-			io:format("\e[1;36m" ++ Catagory ++ "\e[0;37m" ++ ": " ++ Message, Params);
+			io:format("\e[0;36m" ++ Catagory ++ "\e[0;37m" ++ ": " ++ Message, Params);
 
 		_Default ->
 			io:format(Catagory ++ ": " ++ Message, Params)
