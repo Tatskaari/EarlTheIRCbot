@@ -1,28 +1,28 @@
 -module(earlAdminPlugin).
 -include("ircParser.hrl").
--export([start/1]).
+-export([earlAdminPlugin/0]).
 
-start(SendPid) ->
+earlAdminPlugin() ->
 	receive
 		% nick (#n <NICK>)
 		#privmsg{admin=true, message="#n " ++ Nick} ->
-			SendPid ! #nick{nick=Nick};
+			sendPid ! #nick{nick=Nick};
 
 		% Join (#j <CHANNEL>)
 		#privmsg{admin=true, message="#j " ++ K} ->
 			io:format("Joining '~s'~n", [K]),
-			SendPid ! #join{channel=K};
+			sendPid ! #join{channel=K};
 		
 		% Part (#p <CHANNEL>)
 		#privmsg{admin=true, message="#p " ++ Channel} ->
-			SendPid ! #part{channel=Channel};
+			sendPid ! #part{channel=Channel};
 
 		% Quit (#q [reason])
 		#privmsg{admin=true, message="#q " ++ K} ->
-			SendPid ! #quit{reason=K};
+			sendPid ! #quit{reason=K};
 		#privmsg{admin=true, message="#q"} ->
-			SendPid ! #quit{reason="Earl Out"};
+			sendPid ! #quit{reason="Earl Out"};
 
 		_Default -> false % We don't know about everything - let's not deal with it.
 	end,
-	?MODULE:start(SendPid).
+	?MODULE:earlAdminPlugin().
