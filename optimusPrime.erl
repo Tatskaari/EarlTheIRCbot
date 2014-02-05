@@ -18,20 +18,21 @@ optimusPrime() ->
 	?MODULE:optimusPrime().
 
 
-% The entry point of the porgram
+% prints all the primes before K
 primesTo(send, {K, From, Target}) ->
 	N = listToNum(K),
 	Primes = if
 		N<0 ->
 			"Input Error";
-		N>100 ->
+		N>600 ->
 			"Input too large";
 		true ->
 			primesTo(N)
 	end,
-	PrintTerm = From ++ ": " ++ io_lib:format("~p",[Primes]),
+	PrintTerm = From ++ ": " ++ io_lib:format("~w",[Primes]),
 	sendPid ! #privmsg{from=From, target=Target, message=PrintTerm}.
 
+% return trur if K is prime otherwise it returns the lowest factor
 isPrime(send, {K, From, Target}) ->
 	N = listToNum(K),
 	Result = if

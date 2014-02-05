@@ -8,12 +8,12 @@ ircTime() ->
 			io:format("timePid :: EXIT~n");
 		% [From, _, _, Target, "#t"]  ->
 		#privmsg{target=Target, from=From, message="#t"} ->
-			io:format("TIME :: Got message~n"),
 			Message = From ++ ": " ++ date_to_string(erlang:localtime()),
 			sendPid ! #privmsg{from=From, target=Target, message=Message}
 	end,
 	ircTime().
 
+% convers the date to a string in the form of <hour>:<minute>:<second>, <day><postfix> of <month>, <year>
 date_to_string({Date, Time}) ->
 	{Yeart,Montht,Dayt} = Date,
 	{Hourt,Mint,Sect} = Time,
