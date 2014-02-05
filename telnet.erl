@@ -25,7 +25,7 @@ loop() ->
 		
 		% Kills the session of the user: #telnet disconnect 
 		#privmsg{from=From, message="#telnet disconnect"} ->
-			pidListPid ! {sendMessage, {disconnect}, From};
+			pidListPid ! {disconnect, From};
 
 		% sends albert terry strings to the server: #telnet <STRING>
 		#privmsg{from=From, message="#telnet " ++ K} ->
@@ -81,13 +81,14 @@ receive_data(Socket, From) ->
 			echoResponce(Bin, From);
 		{tcp_closed, Socket} ->
 			sendPid !  #privmsg{target=From, message="Connection closed by foreign host."},
-			exit(self(), normal);
+			self() ! die;
 		{command, Message, From} ->
+			io:format("TELNET SEND:: ~s: ~s~n", [From, Message]),
 			gen_tcp:send(Socket, Message);
-		{command,{disconnect}, From} ->
-			io:format(From ++ ": DIEING  ::");
+		{disconnect, From} ->
+			self() ! die;
 		die ->
-			io:format(From ++ ": DIEING  ::"),
+			sendPid ! #privmsg{target=From, message="Exiting session."},
 			pidListPid ! {remove, self()},
 			gen_tcp:close(Socket),
 			exit(self(), normal)
@@ -105,6 +106,8 @@ pidList(PidList) ->
 			pidList(PidList -- [Pid]);
 		{getList, Pid} ->
 			io:format("~p~n", PidList);
+		{disconnect, From} ->
+			lists:foreach(fun(Pid) -> Pid ! {disconnect , From} end, PidList);
 		{sendMessage, Message, From} ->
 			lists:foreach(fun(Pid) -> Pid ! {command, Message, From} end, PidList);
 		die ->
