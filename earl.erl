@@ -47,10 +47,10 @@ start() ->
 	settings ! #setVal{name=admins, value=["graymalkin", "Tatskaari", "Mex", "xand", "Tim"]},
 
 	% Send module registrations
-	parserPid ! #registerPlugin{chan=spawn(earlAdminPlugin, start, [sendPid])},
-	parserPid ! #registerPlugin{chan=(spawn(optimusPrime, optimusPrime, []))},
-	parserPid ! #registerPlugin{chan=(spawn(telnet, telnet, []))},
-	parserPid ! #registerPlugin{chan=(spawn(ircTime, ircTime, []))}.
+	parserPid ! #registerPlugin{chan=(spawn(earlAdminPlugin, start, [sendPid])), name="earlAdminPlugin"},
+	parserPid ! #registerPlugin{chan=(spawn(optimusPrime, optimusPrime, [])), name="optimusPrime"},
+	parserPid ! #registerPlugin{chan=(spawn(telnet, telnet, [])), name="telnet"},
+	parserPid ! #registerPlugin{chan=(spawn(ircTime, ircTime, [])), name="ircTime"}.
 
 getLine(A) ->
 	Index = string:str(A, "\n"),

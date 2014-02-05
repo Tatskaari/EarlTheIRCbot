@@ -13,7 +13,11 @@
 
 -record(notice, {target, message}).
 
--record(registerPlugin, {chan}).
+-record(registerPlugin, {chan, name}).
+-record(deregisterPlugin, {chan, name}).
+
+-record(registerAdmin, {admin}).
+-record(deregisterAdmin, {admin}).
 
 % Data types
 %-record(user, {nick, username, host}).
