@@ -194,7 +194,7 @@ lineParse(Str) ->
 					%x should hold a setting server for this chan, update it's value.
 					X ! #setVal{name=topic, value=Trail},
 					{};
-				#noVal{name=Trail} ->
+				#noVal{name=ChannelName} ->
 					% we better start a settings server to hold details about this chan
 					NewSettingServer = spawn(earl, setting_server, []),
 					channel_info ! #setVal{name=ChannelName, value=NewSettingServer},
