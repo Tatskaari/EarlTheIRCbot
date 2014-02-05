@@ -5,9 +5,10 @@ setting_server_test_() ->
 			Pid = spawn(fun() -> setting_server(dict:store(foo, Val, dict:new())) end),
 			Pid ! #getVal{name=foo, return_chan=self()},
 			receive
-				X -> X
+				#retVal{name=foo, value=X} -> 
+					?assertEqual(X, Val);
+				#noVal{name=foo} -> ?assert(false)
 			end,
-			?assertEqual(X, Val),
 			Pid ! die
 		       end()),
 		?_test(fun() ->
@@ -15,8 +16,9 @@ setting_server_test_() ->
 			Pid ! #setVal{name=bar, value="badger"},
 			Pid ! #getVal{name=bar, return_chan=self()},
 			receive
-				X -> X
-			end,
-			?assertEqual("badger", X)
+				#retVal{name=bar, value=X} -> 
+					?assertEqual("badger", X);
+				#noVal{name=bar} -> ?assert(false)
+			end
 		end())
 	].

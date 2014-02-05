@@ -154,9 +154,9 @@ setting_server(Dict) ->
 		#getVal{name=Name, return_chan=Chan} ->
 			case dict:is_key(Name, Dict) of
 				true ->
-					Chan ! dict:fetch(Name, Dict);
+					Chan ! #retVal{name=Name, value=dict:fetch(Name, Dict)};
 				false ->
-					Chan ! false
+					Chan ! #noVal{name=Name}
 			end;
 		die ->
 			io:format("settings :: EXIT~n"),

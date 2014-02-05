@@ -6,4 +6,6 @@
 -define(COLORS, true).
 
 -record(getVal, {name, return_chan}).
+-record(noVal, {name}).
+-record(retVal, {name, value}).
 -record(setVal, {name, value}).
