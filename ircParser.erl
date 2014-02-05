@@ -22,8 +22,11 @@ parse(PluginsChans) ->
 			exit(self(), normal);
 
     	% deal with registerPlugin requests by adding them to the chan list
-    	#registerPlugin{chan=Chan, name=Name} ->
-		    ?MODULE:parse([{Chan,Name}|PluginsChans]);
+		#registerPlugin{name=Name} ->
+			io:format("adding plugin"),
+			NameAttom = list_to_atom(Name),
+			Chan = spawn(NameAttom, NameAttom, []),
+			?MODULE:parse([{Chan,Name}|PluginsChans]);
 
 		% deregister plugins
 		#deregisterPlugin{name=Name} ->

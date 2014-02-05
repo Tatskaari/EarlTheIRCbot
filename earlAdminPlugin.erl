@@ -23,9 +23,15 @@ earlAdminPlugin() ->
 		#privmsg{admin=true, message="#q"} ->
 			sendPid ! #quit{reason="Earl Out"};
 
+		% Unloads modules
 		#privmsg{admin=true, from=From, target=To, message="#unload " ++ ModuleName} ->
 			parserPid ! #deregisterPlugin{name=ModuleName},
 			sendPid ! #privmsg{from=From, target=To, message=From ++ ": Unloaded " ++ ModuleName};
+
+		% Loads modules
+		#privmsg{admin=true, from=From, target=To, message="#load " ++ ModuleName} ->
+			parserPid ! #registerPlugin{name=ModuleName},
+			sendPid ! #privmsg{from=From, target=To, message=From ++ ": loaded " ++ ModuleName};
 
 		_Default -> false % We don't know about everything - let's not deal with it.
 	end,

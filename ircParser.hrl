@@ -13,8 +13,8 @@
 
 -record(notice, {target, message}).
 
--record(registerPlugin, {chan, name}).
--record(deregisterPlugin, {chan, name}).
+-record(registerPlugin, {name}).
+-record(deregisterPlugin, {name}).
 
 -record(registerAdmin, {admin}).
 -record(deregisterAdmin, {admin}).
