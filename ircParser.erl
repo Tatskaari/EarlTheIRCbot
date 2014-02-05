@@ -29,7 +29,7 @@ parse(PluginsChans) ->
 		T->
 			Line = lineParse(T),
 			case Line of
-				{} -> {};
+				{} -> false;
 				_A ->
 					% Anonnomous function (F) to send line to every registered plugin
 					F = fun(Chan) -> Chan ! Line end,
@@ -53,20 +53,9 @@ parse(PluginsChans) ->
 						% We don't know about everything - let's not deal with it.	
 						_Default -> false 
 					end
-			end,
-		checkIndentResponce(re:run(T, "NOTICE AUTH :... Got Ident response"))
+			end
     end,
     ?MODULE:parse(PluginsChans).
-
-
-% Connects to the server after indent response [[ NEEDS REDOING ]]
-checkIndentResponce({match, [_]}) ->
-	sendPid ! #user{user=?USER},
-	sendPid ! #nick{nick=?NICK},
-	true;
-checkIndentResponce(_) ->
-	false.
-
 
 % Get the command part of a line
 % Produces tuple: {HasPrefix, Prefix, Rest}
