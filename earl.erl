@@ -29,8 +29,7 @@ main() ->
 
 	sendPid ! #user{user=?USER},
 	sendPid ! #nick{nick=?NICK},
-	sendPid ! #join{channel="#bottesting"},
-
+	
 	% Wait until a process wants to kill the program and then tell all processes to an hero 
 	receive
 		die ->
