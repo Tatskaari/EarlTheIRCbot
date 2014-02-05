@@ -18,12 +18,15 @@ parse(PluginsChans) ->
     receive
 		die ->
 			io:format("parserPid :: EXIT~n"),
-			lists:foreach(fun([Pid,_]) -> Pid ! die end, PluginsChans),
+			lists:foreach(fun({Pid,_}) -> Pid ! die end, PluginsChans),
 			exit(self(), normal);
 
     	% deal with registerPlugin requests by adding them to the chan list
     	#registerPlugin{chan=Chan, name=Name} ->
-		    ?MODULE:parse([[Chan,Name]|PluginsChans]);
+		    ?MODULE:parse([{Chan,Name}|PluginsChans]);
+
+		% deregister plugins
+		
 
 
 		T->
@@ -32,7 +35,7 @@ parse(PluginsChans) ->
 				{} -> false;
 				_A ->
 					% Anonnomous function (F) to send line to every registered plugin
-					F = fun([Chan, _]) -> Chan ! Line end,
+					F = fun({Chan, _}) -> Chan ! Line end,
 					% For each plugin run F against it
 					lists:foreach(F, PluginsChans),
 
