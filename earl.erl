@@ -1,5 +1,5 @@
 -module(earl).
--export([main/0, buffer/0,buffer/1, send/1, getLine/1]).
+-export([main/0, buffer/0,buffer/1, send/1, getLine/1, setting_server/0]).
 -import(ircParser, [parse/0]).
 -import(optimusPrime, [optimusPrime/0]).
 -import(time, [timer/0]).
@@ -18,6 +18,7 @@ main() ->
 	register(parserPid, spawn(ircParser, parse, [])),
 	register(mainPid, self()),
 	register(settings, spawn(fun() -> setting_server() end)),
+	register(channel_info, spawn(fun() -> setting_server() end)),
 
 	% Start the plugins
 	start(),

@@ -170,8 +170,37 @@ lineParse(Str) ->
 		"266" -> print("USERS", green, "~s~n", [Trail]), {};
 
 		% Channel join
-		"JOIN" -> print("JOIN", green, "~s joined ~s~n", [Nick, Trail]), {};
-		"332"  -> print("JOIN", green, "Topic: ~s~n", [Trail]), {};
+		"JOIN" -> 
+			print("JOIN", green, "~s joined ~s~n", [Nick, Trail]),
+			channel_info ! #getVal{name=Trail, return_chan=self()},
+			receive
+				#retVal{name=Trail, value=X} ->
+					%x should hold a setting server for this chan, update it's value.
+					X ! #setVal{name=name, value=Trail},
+					{};
+				#noVal{name=Trail} ->
+					% we better start a settings server to hold details about this chan
+					NewSettingServer = spawn(earl, setting_server, []),
+					channel_info ! #setVal{name=Trail, value=NewSettingServer},
+					NewSettingServer ! #setVal{name=name, value=Trail},
+					{}
+			end;
+		"332"  ->
+			print("JOIN", green, "Topic: ~s~n", [Trail]), {},
+			ChannelName = lists:nth(1, Params),
+			channel_info ! #getVal{name=ChannelName, return_chan=self()},
+			receive
+				#retVal{name=ChannelName, value=X} ->
+					%x should hold a setting server for this chan, update it's value.
+					X ! #setVal{name=topic, value=Trail},
+					{};
+				#noVal{name=Trail} ->
+					% we better start a settings server to hold details about this chan
+					NewSettingServer = spawn(earl, setting_server, []),
+					channel_info ! #setVal{name=ChannelName, value=NewSettingServer},
+					NewSettingServer ! #setVal{name=topic, value=Trail},
+					{}
+			end;
 		"333"  -> print("JOIN", green, "Topic set by ~s at ~s~n", [lists:nth(3, Params), msToDate(lists:nth(4, Params)) ]), {};
 		"353"  -> print("JOIN", green, "Users: ~s~n", [Trail]), {};
 		"366"  -> print("JOIN", green, "End of users list~n", []), {};
