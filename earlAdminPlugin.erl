@@ -23,6 +23,10 @@ earlAdminPlugin() ->
 		#privmsg{admin=true, message="#q"} ->
 			sendPid ! #quit{reason="Earl Out"};
 
+		#privmsg{admin=true, from=From, target=To, message="#unload " ++ ModuleName} ->
+			parserPid ! #deregisterPlugin{name=ModuleName},
+			sendPid ! #privmsg{from=From, target=To, message=From ++ ": Unloaded " ++ ModuleName};
+
 		_Default -> false % We don't know about everything - let's not deal with it.
 	end,
 	?MODULE:earlAdminPlugin().

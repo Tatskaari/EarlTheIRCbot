@@ -63,9 +63,6 @@ parse(PluginsChans) ->
 							end,
 							lists:foreach(ListPlugins, PluginsChans);
 
-						#privmsg{from=From, target=To, message="#unload " ++ ModuleName} ->
-							self() ! #deregisterPlugin{name=ModuleName};
-
 						% We don't know about everything - let's not deal with it.	
 						_Default -> false 
 					end
