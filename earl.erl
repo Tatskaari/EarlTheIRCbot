@@ -18,6 +18,7 @@ main() ->
 	register(parserPid, spawn(ircParser, parse, [])),
 	register(mainPid, self()),
 	register(settings, spawn(fun() -> setting_server() end)),
+	register(getAdminPid, spawn(ircParser, getAdmin, [])),
 
 	% Start the plugins
 	start(),
@@ -34,6 +35,10 @@ main() ->
 	end.
 
 start() ->
+	% Set up admin list
+	settings ! #setVal{name=admins, value=["graymalkin", "Tatskaari", "Mex", "xand", "Tim"]},
+
+	% Send module registrations
 	parserPid ! #registerPlugin{chan=spawn(earlAdminPlugin, start, [sendPid])},
 	parserPid ! #registerPlugin{chan=(spawn(optimusPrime, optimusPrime, []))},
 	parserPid ! #registerPlugin{chan=(spawn(telnet, telnet, []))},

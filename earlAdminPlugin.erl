@@ -23,6 +23,6 @@ start(SendPid) ->
 		#privmsg{admin=true, message="#q"} ->
 			SendPid ! #quit{reason="Earl Out"};
 
-		Default -> false % We don't know about everything - let's not deal with it.
+		_Default -> false % We don't know about everything - let's not deal with it.
 	end,
 	?MODULE:start(SendPid).

@@ -25,7 +25,7 @@ parse(PluginsChans) ->
 			telnetPid ! die,
 			exit(self(), normal);
 
-	    	#registerPlugin{chan=Pid} ->
+    	#registerPlugin{chan=Pid} ->
 		    ?MODULE:parse([Pid|PluginsChans]);
 
 		T->
@@ -42,7 +42,7 @@ parse(PluginsChans) ->
 					case Line of
 						% Ping
 						#ping{nonce=K} ->
-							sendPid ! {command, {"PONG", K}};
+							sendPid ! #pong{nonce=K};
 
 						#privmsg{from=From, target=To, message="#plugins" ++ _} ->
 							io:format("~p~p~n~p~n", [To, From, Line]),
@@ -105,13 +105,41 @@ getNick(Str) ->
 	string:sub_word(Str, 1, $!).
 
 
+% Checks that a list contains a given string
+isAdmin(_, []) -> false;
+isAdmin(Str, List) ->
+	[Head|Tail] = List,
+	if
+		Head == Str ->
+			true;
+		true ->
+			isAdmin(Str, Tail)
+	end.
+
+
+getAdmins() ->
+	["graymalkin", "Tatskaari", "Mex", "xand", "Tim"].
+%	case dict:is_key(admins, Dict) of
+%		true ->
+%			dict:fetch(admins, Dict);
+%		false ->
+%			false
+%	end.
+%	settings ! #getVal{name=admins, return_chan=getAdmins()},
+%	receive
+%		A -> A
+%	end,
+%	getAdmins([]).
+
+
 % Parse a line
 lineParse(Str) ->
 	{_HasPrefix, Prefix, Rest} = getPrefix(Str),
 	{_HasTrail, Trail, CommandsAndParams} = getTrail(Rest),
 	{Command, Params} = getCommand(CommandsAndParams),
 	Nick = getNick(Prefix),
-	IsAdmin = isAdmin(Nick, ["graymalkin", "Tatskaari", "Mex", "xand", "Tim"]),
+	IsAdmin = isAdmin(Nick, getAdmins()),
+
 	case Command of
 		"PRIVMSG" -> #privmsg{target=lists:nth(1, Params), from=Nick,  admin=IsAdmin, message=Trail};
 		"PING" -> #ping{nonce=Trail};
@@ -173,17 +201,5 @@ lineParse(Str) ->
 		"436" -> io:format("ERROR: Nick collision."), {};
 
 		% Unknown commands
-		A -> io:format("WARNING: Un-recognised command '~s': '~s'~n", [Command, Str]),{}
-	end.
-
-
-% Checks that a list contains a given string
-isAdmin(_, []) -> false;
-isAdmin(Str, List) ->
-	[Head|Tail] = List,
-	if
-		Head == Str ->
-			true;
-		true ->
-			isAdmin(Str, Tail)
+		_A -> io:format("WARNING: Un-recognised command '~s': '~s'~n", [Command, Str]),{}
 	end.
