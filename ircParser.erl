@@ -3,9 +3,6 @@
 -include_lib("eunit/include/eunit.hrl").
 
 -include("earl.hrl").
--define(NICK, "SimonsEarl").
--define(USER, "Tatskaari Sir_Earl Sir_Earl Sir_Earl").
--define(COLORS, true).
 
 %Contains the record definitions
 -include("ircParser.hrl").
