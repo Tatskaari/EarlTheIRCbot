@@ -263,5 +263,5 @@ print(Catagory, Color, Message, Params) when ?COLORS ->
 		_Default ->
 			io:format(Catagory ++ ": " ++ Message, Params)
 	end;
-print(Catagory, Color, Message, Params) ->
+print(Catagory, _Color, Message, Params) ->
 	io:format(Catagory ++ ": " ++ Message, Params).

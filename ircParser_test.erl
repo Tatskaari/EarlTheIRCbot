@@ -14,7 +14,7 @@ lineParse_test_() ->
 		?_assertEqual(
 			#ping{nonce="irc.localhost.localdomain"},
 			lineParse("PING :irc.localhost.localdomain")
-		)
+		),
 		?_assertEqual(
 			#quit{reason="Bye bye!"},
 			lineParse(":CalebDelnay!calebd@localhost QUIT :Bye bye!")

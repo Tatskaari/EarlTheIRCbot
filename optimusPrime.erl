@@ -49,8 +49,10 @@ isPrime(send, {K, From, Target}) ->
 	if
 		Result == true ->
 			PrintTerm = From ++ ": " ++ K ++ " is prime";
+		Result == "Input Error" ->
+			PrintTerm = From ++ ": Invalid input.";
 		true ->
-			PrintTerm = From ++ ": " ++ K ++ " is devisable by " ++ io_lib:format("~p",[Result])
+			PrintTerm = From ++ ": " ++ K ++ " is devisible by " ++ io_lib:format("~p",[Result])
 	end,
 	sendPid ! #privmsg{from=From, target=Target, message=PrintTerm}.
 
