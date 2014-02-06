@@ -15,10 +15,10 @@ lineParse_test_() ->
 			#ping{nonce="irc.localhost.localdomain"},
 			lineParse("PING :irc.localhost.localdomain")
 		)
-%		?_assertEqual(
-%			#quit{message="Bye bye!"},
-%			lineParse(":CalebDelnay!calebd@localhost QUIT :Bye bye!")
-%		)
+		?_assertEqual(
+			#quit{reason="Bye bye!"},
+			lineParse(":CalebDelnay!calebd@localhost QUIT :Bye bye!")
+		)
 	].
 
 getTrail_test_() ->

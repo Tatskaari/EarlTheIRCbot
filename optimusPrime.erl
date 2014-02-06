@@ -1,8 +1,11 @@
 -module(optimusPrime).
--export([optimusPrime/0, primesTo/2, isPrime/2]).
+-export([optimusPrime/0, primesTo/2, isPrime/2, get_Integer/1]).
 
 %Contains the record definitions
 -include("ircParser.hrl").
+
+% Unit tests
+-include_lib("eunit/include/eunit.hrl").
 
 %%% IRC part here, maths below %%%
 optimusPrime() ->
@@ -20,7 +23,7 @@ optimusPrime() ->
 
 % prints all the primes before K
 primesTo(send, {K, From, Target}) ->
-	N = listToNum(K),
+	N = get_Integer(K),
 	Primes = if
 		N<0 ->
 			"Input Error";
@@ -34,7 +37,7 @@ primesTo(send, {K, From, Target}) ->
 
 % return trur if K is prime otherwise it returns the lowest factor
 isPrime(send, {K, From, Target}) ->
-	N = listToNum(K),
+	N = get_Integer(K),
 	Result = if
 		N<0 ->
 			"Input Error";
@@ -51,11 +54,14 @@ isPrime(send, {K, From, Target}) ->
 	end,
 	sendPid ! #privmsg{from=From, target=Target, message=PrintTerm}.
 
-% takes a string and turns it into an integer
-listToNum(List) ->
-    case string:to_integer(List) of
-        {error, _} -> -1;
-        {F,_Rest} -> F
+% Converts a list into a number
+% http://stackoverflow.com/questions/4536046/test-if-a-string-is-a-number
+get_Integer(S) ->
+    try
+        K = list_to_integer(S),
+        K
+    catch error:badarg ->
+        -1
     end.
 
 %%% MATHS PAST THIS POINT %%%
@@ -95,3 +101,46 @@ isPrime(2) -> true;
 isPrime(3) -> true;
 isPrime(N) when N rem 2 == 0 -> 2;
 isPrime(N) -> notDevisableBy(N, 3).
+
+
+% =============================================================================
+%
+%                                  UNIT TESTS
+%
+% =============================================================================
+
+get_number_test_() ->
+	[
+		?_assertEqual(
+			66,
+			get_Integer("66")
+		),
+		?_assertEqual(
+			get_Integer("2746325"),
+			2746325
+		),
+		?_assertEqual(
+			get_Integer("This is not a number"),
+			-1
+		)
+	].
+
+get_prime_test_() ->
+	[
+		?_assertEqual(
+			isPrime(7),
+			true
+		),
+		?_assertEqual(
+			isPrime(823),
+			true
+		),
+		?_assertEqual(
+			isPrime(56),
+			2
+		),
+		?_assertEqual(
+			isPrime(9),
+			3
+		)
+	].
