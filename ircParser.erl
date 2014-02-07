@@ -1,6 +1,7 @@
 -module(ircParser).
 -export([lineParse/1, print/4, getCommand/1, getTrail/1, getPrefix/1, isAdmin/2]).
 -include_lib("eunit/include/eunit.hrl").
+-import(settingsServer, [getSetting/2]).
 -import(optimusPrime, [optimusPrime/0]).
 -import(time, [timer/0]).
 -import(telnet, [telnet/0]).
@@ -61,7 +62,7 @@ isAdmin(Str, List) ->
 
 
 getAdmins() ->
-	["graymalkin", "Tatskaari", "Mex", "xand", "Tim"].
+	getSetting(settings, admins).
 
 
 % Parse a line
@@ -149,6 +150,10 @@ lineParse(Str) ->
 		"333"  -> print("JOIN", green, "Topic set by ~s at ~s~n", [lists:nth(3, Params), msToDate(lists:nth(4, Params)) ]), {};
 		"353"  -> print("JOIN", green, "Users: ~s~n", [Trail]), {};
 		"366"  -> print("JOIN", green, "End of users list~n", []), {};
+	        
+	        % Nick
+	        "NICK" -> print("NICK", blue, "~s changed to ~s~n", [Nick, Trail]),
+				#nick{nick={Nick,Trail}};
 
 		% Part
 		"PART" -> print("PART", green, "~s parted ~s~n", [Nick, lists:nth(1, Params)]), {};

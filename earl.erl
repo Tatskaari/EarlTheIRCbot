@@ -1,11 +1,9 @@
 -module(earl).
--export([main/0, buffer/0,buffer/1, send/1, getLine/1, setting_server/0]).
+-export([main/0, buffer/0,buffer/1, send/1, getLine/1]).
 -import(messageRouter, [parse/0]).
 -include("ircParser.hrl").
 -include("earl.hrl").
 -include_lib("eunit/include/eunit.hrl").
--include_lib("earl_test.erl").
-
 
 % Spawns the buffer and the connections processes
 main() ->
@@ -14,8 +12,8 @@ main() ->
 	register(connectPid, spawn(earlConnection, connect, [?HOSTNAME, ?PORT, self()])),
 	register(parserPid, spawn(messageRouter, parse, [])),
 	register(mainPid, self()),
-	register(settings, spawn(fun() -> setting_server() end)),
-	register(channel_info, spawn(fun() -> setting_server() end)),
+	register(settings, spawn(fun() -> settingsServer:setting_server() end)),
+	register(channel_info, spawn(fun() -> settingsServer:setting_server() end)),
 
 	% Start the plugins
 	start(),
@@ -149,22 +147,3 @@ send(Socket) ->
 			ok = gen_tcp:send(Socket, Data)
 	end,
 	send(Socket).
-
-setting_server() -> setting_server(dict:new()).
-
-setting_server(Dict) ->
-	receive
-		#setVal{name=Name, value=Value} -> 
-			setting_server(dict:store(Name, Value, Dict));
-		#getVal{name=Name, return_chan=Chan} ->
-			case dict:is_key(Name, Dict) of
-				true ->
-					Chan ! #retVal{name=Name, value=dict:fetch(Name, Dict)};
-				false ->
-					Chan ! #noVal{name=Name}
-			end;
-		die ->
-			io:format("settings :: EXIT~n"),
-			exit(self(), normal)	
-	end,
-	setting_server(Dict).
