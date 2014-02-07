@@ -1,9 +1,6 @@
 -module(earl).
 -export([main/0, buffer/0,buffer/1, send/1, getLine/1, setting_server/0]).
--import(ircParser, [parse/0]).
--import(optimusPrime, [optimusPrime/0]).
--import(time, [timer/0]).
--import(telnet, [telnet/0]).
+-import(messageRouter, [route/0]).
 -include("ircParser.hrl").
 -include("earl.hrl").
 -include_lib("eunit/include/eunit.hrl").
@@ -15,7 +12,7 @@ main() ->
 	% Spawn the processes for connecting and building commmands
 	register(bufferPid, spawn(earl, buffer, [])),        
 	register(connectPid, spawn(earlConnection, connect, [?HOSTNAME, ?PORT, self()])),
-	register(parserPid, spawn(ircParser, parse, [])),
+	register(routerPid, spawn(messageRouter, route, [])),
 	register(mainPid, self()),
 	register(settings, spawn(fun() -> setting_server() end)),
 	register(channel_info, spawn(fun() -> setting_server() end)),
@@ -34,7 +31,7 @@ main() ->
 	receive
 		die ->
 			bufferPid ! die,
-			parserPid ! die,
+			routerPid ! die,
 			connectPid ! die,
 			settings ! die,
 			io:format("mainPid :: EXIT~n"),
@@ -46,10 +43,10 @@ start() ->
 	settings ! #setVal{name=admins, value=["graymalkin", "Tatskaari", "Mex", "xand", "Tim"]},
 
 	% Send module registrations
-	parserPid ! #registerPlugin{name="earlAdminPlugin"},
-	parserPid ! #registerPlugin{name="optimusPrime"},
-	parserPid ! #registerPlugin{name="telnet"},
-	parserPid ! #registerPlugin{name="ircTime"}.
+	routerPid ! #registerPlugin{name="earlAdminPlugin"},
+	routerPid ! #registerPlugin{name="optimusPrime"},
+	routerPid ! #registerPlugin{name="telnet"},
+	routerPid ! #registerPlugin{name="ircTime"}.
 
 getLine(A) ->
 	Index = string:str(A, "\n"),
@@ -74,7 +71,7 @@ buffer(Buffer)->
 					buffer(Buffer ++ Bin)
 			end;
 		{true, A, B} ->
-			parserPid ! A,
+			routerPid ! A,
 			?MODULE:buffer(B)
 	end.
 

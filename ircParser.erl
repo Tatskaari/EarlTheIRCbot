@@ -1,7 +1,10 @@
 -module(ircParser).
--export([parse/0, parse/1, lineParse/1, print/4]).
+-export([lineParse/1, print/4]).
 -include_lib("eunit/include/eunit.hrl").
-
+-import(optimusPrime, [optimusPrime/0]).
+-import(time, [timer/0]).
+-import(telnet, [telnet/0]).
+-import(earlAdminPlugin, [earlAdminPlugin/0]).
 -include("earl.hrl").
 
 %Contains the record definitions
@@ -9,69 +12,6 @@
 
 %Include Tests
 -include("ircParser_test.erl").
-
-% Starts passing the message around to the different handlers.
-parse() ->
-	parse([]).
-
-parse(PluginsChans) ->
-    receive
-		die ->
-			io:format("parserPid :: EXIT~n"),
-			lists:foreach(fun({Pid,_}) -> Pid ! die end, PluginsChans),
-			exit(self(), normal);
-
-    	% deal with registerPlugin requests by adding them to the chan list
-		#registerPlugin{name=Name} ->
-			io:format("adding plugin"),
-			NameAttom = list_to_atom(Name),
-			Chan = spawn(NameAttom, NameAttom, []),
-			?MODULE:parse([{Chan,Name}|PluginsChans]);
-
-		% deregister plugins
-		#deregisterPlugin{name=Name} ->
-			io:format("UNLOADING MODULE : ~s~n", [Name]),
-			F = fun({Chan, N}) ->
-					case {Chan, N} of
-						{Chan, Name} ->
-							Chan ! die,
-							?MODULE:parse(PluginsChans -- [{Chan, Name}]);
-						_Default -> false 
-					end
-				end,
-			lists:foreach(F, PluginsChans);
-
-
-		T->
-			Line = lineParse(T),
-			case Line of
-				{} -> false;
-				_A ->
-					% Anonnomous function (F) to send line to every registered plugin
-					F = fun({Chan, _}) -> Chan ! Line end,
-					% For each plugin run F against it
-					lists:foreach(F, PluginsChans),
-
-					% Built in commands which are required for the protocol
-					case Line of
-						% Ping
-						#ping{nonce=K} ->
-							sendPid ! #pong{nonce=K};
-
-						#privmsg{from=From, target=To, message="#plugins"} ->
-							io:format("~p~p~n~p~n", [To, From, Line]),
-							ListPlugins = fun(Chan) ->
-								M = io_lib:format("~p", [Chan]),
-								sendPid ! #privmsg{target=To, message=("Plugin: " ++ M)}
-							end,
-							lists:foreach(ListPlugins, PluginsChans);
-
-						% We don't know about everything - let's not deal with it.	
-						_Default -> false 
-					end
-			end
-    end,
-    ?MODULE:parse(PluginsChans).
 
 % Get the command part of a line
 % Produces tuple: {HasPrefix, Prefix, Rest}
@@ -122,17 +62,6 @@ isAdmin(Str, List) ->
 
 getAdmins() ->
 	["graymalkin", "Tatskaari", "Mex", "xand", "Tim"].
-%	case dict:is_key(admins, Dict) of
-%		true ->
-%			dict:fetch(admins, Dict);
-%		false ->
-%			false
-%	end.
-%	settings ! #getVal{name=admins, return_chan=getAdmins()},
-%	receive
-%		A -> A
-%	end,
-%	getAdmins([]).
 
 
 % Parse a line
