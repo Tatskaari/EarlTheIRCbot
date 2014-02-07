@@ -1,5 +1,5 @@
 -module(ircParser).
--export([lineParse/1, print/4]).
+-export([lineParse/1, print/4, getCommand/1, getTrail/1, getPrefix/1, isAdmin/2]).
 -include_lib("eunit/include/eunit.hrl").
 -import(optimusPrime, [optimusPrime/0]).
 -import(time, [timer/0]).
@@ -11,7 +11,7 @@
 -include("ircParser.hrl").
 
 %Include Tests
--include("ircParser_test.erl").
+%-include("ircParser_test.erl").
 
 % Get the command part of a line
 % Produces tuple: {HasPrefix, Prefix, Rest}
