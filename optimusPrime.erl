@@ -32,16 +32,23 @@ primesTo(send, {K, From, Target}) ->
 		true ->
 			primesTo(N)
 	end,
-	PrintTerm = From ++ ": " ++ io_lib:format("~w",[Primes]),
+        if
+		Primes == "Input Error" ->
+			PrintTerm = From ++ ": " ++ Primes;
+		true ->
+			PrintTerm = From ++ ": " ++ io_lib:format("~w",[Primes])
+	end,
 	sendPid ! #privmsg{from=From, target=Target, message=PrintTerm}.
 
 % return trur if K is prime otherwise it returns the lowest factor
 isPrime(send, {K, From, Target}) ->
 	N = get_Integer(K),
 	Result = if
-		N<0 ->
+		% A prime number (or a prime) is a natural number greater than
+		%   1 that has no positive divisors other than 1 and itself.
+		N < 1 ->
 			"Input Error";
-		N>1000000000 ->
+		N > 1000000000 ->
 			"Input too large";
 		true ->
 			isPrime(N)
@@ -52,7 +59,7 @@ isPrime(send, {K, From, Target}) ->
 		Result == "Input Error" ->
 			PrintTerm = From ++ ": Invalid input.";
 		true ->
-			PrintTerm = From ++ ": " ++ K ++ " is devisible by " ++ io_lib:format("~p",[Result])
+			PrintTerm = From ++ ": " ++ K ++ " is divisible by " ++ io_lib:format("~p",[Result])
 	end,
 	sendPid ! #privmsg{from=From, target=Target, message=PrintTerm}.
 
