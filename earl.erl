@@ -9,7 +9,7 @@
 main() ->
 	% Spawn the processes for connecting and building commmands
 	register(bufferPid, spawn(earl, buffer, [])),        
-	register(connectPid, spawn(earlConnection, connect, [?HOSTNAME, ?PORT, self()])),
+	register(connectPid, spawn(earlConnection, connect, [?HOSTNAME, ?PORT])),
 	register(parserPid, spawn(messageRouter, parse, [])),
 	register(mainPid, self()),
 	register(settings, spawn(fun() -> settingsServer:setting_server() end)),
@@ -47,6 +47,7 @@ start() ->
 	parserPid ! #registerPlugin{name="earlAdminPlugin"},
 	parserPid ! #registerPlugin{name="optimusPrime"},
 	parserPid ! #registerPlugin{name="telnet"},
+	parserPid ! #registerPlugin{name="reminder"},
 	parserPid ! #registerPlugin{name="ircTime"}.
 
 getLine(A) ->

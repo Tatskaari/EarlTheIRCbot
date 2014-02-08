@@ -6,6 +6,7 @@
 -import(time, [timer/0]).
 -import(telnet, [telnet/0]).
 -import(earlAdminPlugin, [earlAdminPlugin/0]).
+-import(reminder, [reminder/0]).
 -include("earl.hrl").
 
 %Contains the record definitions

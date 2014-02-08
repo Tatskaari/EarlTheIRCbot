@@ -2,7 +2,7 @@
 -define(PORT, 6667).
 
 -define(NICK, "Earl").
--define(USER, "graymalkin Sir_Earl Sir_Earl Sir_Earl").
+-define(USER, "Tatskaari Sir_Earl Sir_Earl Sir_Earl").
 -define(COLORS, true).
 -define(AUTOJN, ["#bottesting"]).
 
