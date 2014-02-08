@@ -20,5 +20,11 @@ setting_server_test_() ->
 					?assertEqual("badger", X);
 				#noVal{name=bar} -> ?assert(false)
 			end
-		end())
+		end()),
+
+		?_test(fun() ->
+			Pid = spawn(fun() -> setting_server() end),
+			Pid ! #setVal{name=bar, value="badger"},
+			?assertEqual(getSetting(Pid, bar), "badger")
+			end())
 	].

@@ -1,24 +1,19 @@
 -module(earl).
--export([main/0, buffer/0,buffer/1, send/1, getLine/1, setting_server/0]).
--import(ircParser, [parse/0]).
--import(optimusPrime, [optimusPrime/0]).
--import(time, [timer/0]).
--import(telnet, [telnet/0]).
+-export([main/0, buffer/0,buffer/1, send/1, getLine/1]).
+-import(messageRouter, [parse/0]).
 -include("ircParser.hrl").
 -include("earl.hrl").
 -include_lib("eunit/include/eunit.hrl").
--include_lib("earl_test.erl").
-
 
 % Spawns the buffer and the connections processes
 main() ->
 	% Spawn the processes for connecting and building commmands
 	register(bufferPid, spawn(earl, buffer, [])),        
-	register(connectPid, spawn(earlConnection, connect, [?HOSTNAME, ?PORT, self()])),
-	register(parserPid, spawn(ircParser, parse, [])),
+	register(connectPid, spawn(earlConnection, connect, [?HOSTNAME, ?PORT])),
+	register(parserPid, spawn(messageRouter, parse, [])),
 	register(mainPid, self()),
-	register(settings, spawn(fun() -> setting_server() end)),
-	register(channel_info, spawn(fun() -> setting_server() end)),
+	register(settings, spawn(fun() -> settingsServer:setting_server() end)),
+	register(channel_info, spawn(fun() -> settingsServer:setting_server() end)),
 
 	% Start the plugins
 	start(),
@@ -29,8 +24,10 @@ main() ->
 
 	sendPid ! #user{user=?USER},
 	sendPid ! #nick{nick=?NICK},
-	sendPid ! #join{channel="#bottesting"},
 
+	JoinChan = fun(Chan) -> sendPid ! #join{channel=Chan} end,
+	lists:foreach(JoinChan, ?AUTOJN),
+	
 	% Wait until a process wants to kill the program and then tell all processes to an hero 
 	receive
 		die ->
@@ -47,10 +44,11 @@ start() ->
 	settings ! #setVal{name=admins, value=["graymalkin", "Tatskaari", "Mex", "xand", "Tim"]},
 
 	% Send module registrations
-	parserPid ! #registerPlugin{chan=(spawn(earlAdminPlugin, start, [sendPid])), name="earlAdminPlugin"},
-	parserPid ! #registerPlugin{chan=(spawn(optimusPrime, optimusPrime, [])), name="optimusPrime"},
-	parserPid ! #registerPlugin{chan=(spawn(telnet, telnet, [])), name="telnet"},
-	parserPid ! #registerPlugin{chan=(spawn(ircTime, ircTime, [])), name="ircTime"}.
+	parserPid ! #registerPlugin{name="earlAdminPlugin"},
+	parserPid ! #registerPlugin{name="optimusPrime"},
+	parserPid ! #registerPlugin{name="telnet"},
+	parserPid ! #registerPlugin{name="reminder"},
+	parserPid ! #registerPlugin{name="ircTime"}.
 
 getLine(A) ->
 	Index = string:str(A, "\n"),
@@ -153,22 +151,3 @@ send(Socket) ->
 			ok = gen_tcp:send(Socket, Data)
 	end,
 	send(Socket).
-
-setting_server() -> setting_server(dict:new()).
-
-setting_server(Dict) ->
-	receive
-		#setVal{name=Name, value=Value} -> 
-			setting_server(dict:store(Name, Value, Dict));
-		#getVal{name=Name, return_chan=Chan} ->
-			case dict:is_key(Name, Dict) of
-				true ->
-					Chan ! #retVal{name=Name, value=dict:fetch(Name, Dict)};
-				false ->
-					Chan ! #noVal{name=Name}
-			end;
-		die ->
-			io:format("settings :: EXIT~n"),
-			exit(self(), normal)	
-	end,
-	setting_server(Dict).

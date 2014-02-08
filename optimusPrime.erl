@@ -1,8 +1,11 @@
 -module(optimusPrime).
--export([optimusPrime/0, primesTo/2, isPrime/2]).
+-export([optimusPrime/0, primesTo/2, isPrime/2, get_Integer/1]).
 
 %Contains the record definitions
 -include("ircParser.hrl").
+
+% Unit tests
+-include_lib("eunit/include/eunit.hrl").
 
 %%% IRC part here, maths below %%%
 optimusPrime() ->
@@ -18,26 +21,34 @@ optimusPrime() ->
 	?MODULE:optimusPrime().
 
 
-% The entry point of the porgram
+% prints all the primes before K
 primesTo(send, {K, From, Target}) ->
-	N = listToNum(K),
+	N = get_Integer(K),
 	Primes = if
 		N<0 ->
 			"Input Error";
-		N>100 ->
+		N>600 ->
 			"Input too large";
 		true ->
 			primesTo(N)
 	end,
-	PrintTerm = From ++ ": " ++ io_lib:format("~p",[Primes]),
+        if
+		Primes == "Input Error" ->
+			PrintTerm = From ++ ": " ++ Primes;
+		true ->
+			PrintTerm = From ++ ": " ++ io_lib:format("~w",[Primes])
+	end,
 	sendPid ! #privmsg{from=From, target=Target, message=PrintTerm}.
 
+% return trur if K is prime otherwise it returns the lowest factor
 isPrime(send, {K, From, Target}) ->
-	N = listToNum(K),
+	N = get_Integer(K),
 	Result = if
-		N<0 ->
+		% A prime number (or a prime) is a natural number greater than
+		%   1 that has no positive divisors other than 1 and itself.
+		N < 1 ->
 			"Input Error";
-		N>1000000000 ->
+		N > 1000000000 ->
 			"Input too large";
 		true ->
 			isPrime(N)
@@ -45,16 +56,21 @@ isPrime(send, {K, From, Target}) ->
 	if
 		Result == true ->
 			PrintTerm = From ++ ": " ++ K ++ " is prime";
+		Result == "Input Error" ->
+			PrintTerm = From ++ ": Invalid input.";
 		true ->
-			PrintTerm = From ++ ": " ++ K ++ " is devisable by " ++ io_lib:format("~p",[Result])
+			PrintTerm = From ++ ": " ++ K ++ " is divisible by " ++ io_lib:format("~p",[Result])
 	end,
 	sendPid ! #privmsg{from=From, target=Target, message=PrintTerm}.
 
-% takes a string and turns it into an integer
-listToNum(List) ->
-    case string:to_integer(List) of
-        {error, _} -> -1;
-        {F,_Rest} -> F
+% Converts a list into a number
+% http://stackoverflow.com/questions/4536046/test-if-a-string-is-a-number
+get_Integer(S) ->
+    try
+        K = list_to_integer(S),
+        K
+    catch error:badarg ->
+        -1
     end.
 
 %%% MATHS PAST THIS POINT %%%
@@ -94,3 +110,46 @@ isPrime(2) -> true;
 isPrime(3) -> true;
 isPrime(N) when N rem 2 == 0 -> 2;
 isPrime(N) -> notDevisableBy(N, 3).
+
+
+% =============================================================================
+%
+%                                  UNIT TESTS
+%
+% =============================================================================
+
+get_number_test_() ->
+	[
+		?_assertEqual(
+			66,
+			get_Integer("66")
+		),
+		?_assertEqual(
+			get_Integer("2746325"),
+			2746325
+		),
+		?_assertEqual(
+			get_Integer("This is not a number"),
+			-1
+		)
+	].
+
+get_prime_test_() ->
+	[
+		?_assertEqual(
+			isPrime(7),
+			true
+		),
+		?_assertEqual(
+			isPrime(823),
+			true
+		),
+		?_assertEqual(
+			isPrime(56),
+			2
+		),
+		?_assertEqual(
+			isPrime(9),
+			3
+		)
+	].

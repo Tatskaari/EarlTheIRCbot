@@ -1,77 +1,19 @@
 -module(ircParser).
--export([parse/0, parse/1, lineParse/1, print/4]).
+-export([lineParse/1, print/4, getCommand/1, getTrail/1, getPrefix/1, isAdmin/2]).
 -include_lib("eunit/include/eunit.hrl").
-
+-import(settingsServer, [getSetting/2]).
+-import(optimusPrime, [optimusPrime/0]).
+-import(time, [timer/0]).
+-import(telnet, [telnet/0]).
+-import(earlAdminPlugin, [earlAdminPlugin/0]).
+-import(reminder, [reminder/0]).
 -include("earl.hrl").
 
 %Contains the record definitions
 -include("ircParser.hrl").
 
 %Include Tests
--include("ircParser_test.erl").
-
-% Starts passing the message around to the different handlers.
-parse() ->
-	parse([]).
-
-parse(PluginsChans) ->
-    receive
-		die ->
-			io:format("parserPid :: EXIT~n"),
-			lists:foreach(fun({Pid,_}) -> Pid ! die end, PluginsChans),
-			exit(self(), normal);
-
-    	% deal with registerPlugin requests by adding them to the chan list
-    	#registerPlugin{chan=Chan, name=Name} ->
-		    ?MODULE:parse([{Chan,Name}|PluginsChans]);
-
-		% deregister plugins
-		#deregisterPlugin{name=Name} ->
-			io:format("UNLOADING MODULE : ~s~n", [Name]),
-			F = fun({Chan, N}) ->
-					case {Chan, N} of
-						{Chan, Name} ->
-							Chan ! die,
-							?MODULE:parse(PluginsChans -- [{Chan, Name}]);
-						_Default -> false 
-					end
-				end,
-			lists:foreach(F, PluginsChans);
-
-
-		T->
-			Line = lineParse(T),
-			case Line of
-				{} -> false;
-				_A ->
-					% Anonnomous function (F) to send line to every registered plugin
-					F = fun({Chan, _}) -> Chan ! Line end,
-					% For each plugin run F against it
-					lists:foreach(F, PluginsChans),
-
-					% Built in commands which are required for the protocol
-					case Line of
-						% Ping
-						#ping{nonce=K} ->
-							sendPid ! #pong{nonce=K};
-
-						#privmsg{from=From, target=To, message="#plugins"} ->
-							io:format("~p~p~n~p~n", [To, From, Line]),
-							ListPlugins = fun(Chan) ->
-								M = io_lib:format("~p", [Chan]),
-								sendPid ! #privmsg{target=To, message=("Plugin: " ++ M)}
-							end,
-							lists:foreach(ListPlugins, PluginsChans);
-
-						#privmsg{from=From, target=To, message="#unload " ++ ModuleName} ->
-							self() ! #deregisterPlugin{name=ModuleName};
-
-						% We don't know about everything - let's not deal with it.	
-						_Default -> false 
-					end
-			end
-    end,
-    ?MODULE:parse(PluginsChans).
+%-include("ircParser_test.erl").
 
 % Get the command part of a line
 % Produces tuple: {HasPrefix, Prefix, Rest}
@@ -121,18 +63,7 @@ isAdmin(Str, List) ->
 
 
 getAdmins() ->
-	["graymalkin", "Tatskaari", "Mex", "xand", "Tim"].
-%	case dict:is_key(admins, Dict) of
-%		true ->
-%			dict:fetch(admins, Dict);
-%		false ->
-%			false
-%	end.
-%	settings ! #getVal{name=admins, return_chan=getAdmins()},
-%	receive
-%		A -> A
-%	end,
-%	getAdmins([]).
+	getSetting(settings, admins).
 
 
 % Parse a line
@@ -188,15 +119,14 @@ lineParse(Str) ->
 		% Channel join
 		"JOIN" -> 
 			print("JOIN", green, "~s joined ~s~n", [Nick, Trail]),
-			channel_info ! #getVal{name=Trail, return_chan=self()},
-			receive
+			case getSetting(channel_info, Trail) of
 				#retVal{name=Trail, value=X} ->
 					%x should hold a setting server for this chan, update it's value.
 					X ! #setVal{name=name, value=Trail},
 					{};
 				#noVal{name=Trail} ->
 					% we better start a settings server to hold details about this chan
-					NewSettingServer = spawn(earl, setting_server, []),
+					NewSettingServer = spawn(settingsServer, setting_server, []),
 					channel_info ! #setVal{name=Trail, value=NewSettingServer},
 					NewSettingServer ! #setVal{name=name, value=Trail},
 					{}
@@ -204,15 +134,14 @@ lineParse(Str) ->
 		"332"  ->
 			print("JOIN", green, "Topic: ~s~n", [Trail]), {},
 			ChannelName = lists:nth(1, Params),
-			channel_info ! #getVal{name=ChannelName, return_chan=self()},
-			receive
+			case getSetting(channel_info, ChannelName) of
 				#retVal{name=ChannelName, value=X} ->
 					%x should hold a setting server for this chan, update it's value.
 					X ! #setVal{name=topic, value=Trail},
 					{};
 				#noVal{name=ChannelName} ->
 					% we better start a settings server to hold details about this chan
-					NewSettingServer = spawn(earl, setting_server, []),
+					NewSettingServer = spawn(settingsServer, setting_server, []),
 					channel_info ! #setVal{name=ChannelName, value=NewSettingServer},
 					NewSettingServer ! #setVal{name=topic, value=Trail},
 					{}
@@ -220,6 +149,10 @@ lineParse(Str) ->
 		"333"  -> print("JOIN", green, "Topic set by ~s at ~s~n", [lists:nth(3, Params), msToDate(lists:nth(4, Params)) ]), {};
 		"353"  -> print("JOIN", green, "Users: ~s~n", [Trail]), {};
 		"366"  -> print("JOIN", green, "End of users list~n", []), {};
+	        
+	        % Nick
+	        "NICK" -> print("NICK", blue, "~s changed to ~s~n", [Nick, Trail]),
+				#nick{nick={Nick,Trail}};
 
 		% Part
 		"PART" -> print("PART", green, "~s parted ~s~n", [Nick, lists:nth(1, Params)]), {};
@@ -279,5 +212,5 @@ print(Catagory, Color, Message, Params) when ?COLORS ->
 		_Default ->
 			io:format(Catagory ++ ": " ++ Message, Params)
 	end;
-print(Catagory, Color, Message, Params) ->
+print(Catagory, _Color, Message, Params) ->
 	io:format(Catagory ++ ": " ++ Message, Params).

@@ -1,3 +1,4 @@
 #!/bin/bash
-erlc earl.erl ircParser.erl optimusPrime.erl ircTime.erl telnet.erl earlConnection.erl earlAdminPlugin.erl && \
+erlc earl.erl settingsServer.erl messageRouter.erl ircParser.erl \
+optimusPrime.erl ircTime.erl telnet.erl earlConnection.erl earlAdminPlugin.erl reminder.erl && \
 erl -s earl main -s init stop
