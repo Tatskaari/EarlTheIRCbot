@@ -47,6 +47,7 @@ start() ->
 	parserPid ! #registerPlugin{name="earlAdminPlugin"},
 	parserPid ! #registerPlugin{name="optimusPrime"},
 	parserPid ! #registerPlugin{name="telnet"},
+	parserPid ! #registerPlugin{name="reminder"},
 	parserPid ! #registerPlugin{name="ircTime"}.
 
 getLine(A) ->
