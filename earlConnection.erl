@@ -1,16 +1,16 @@
 -module(earlConnection).
--export([connect/3]).
+-export([connect/2]).
 
 % Opens a connectoin to the server
-connect({ok, Socket}, ReadyChan) ->
+connect({ok, Socket}) ->
 	register(sendPid, spawn(earl, send, [Socket])),
-	ReadyChan ! connected,
+	mainPid ! connected,
 	receive_data(Socket);
-connect({error, Reason},_) ->
+connect({error, Reason}) ->
 	io:format("ERROR - Could not connect: ~s~n", [Reason]).
-connect(Hostname, Port, ReadyChan) ->
+connect(Hostname, Port) ->
 	io:format("INFO - Connecting to ~s:~p ~n", [Hostname, Port]),
-	connect(gen_tcp:connect(Hostname, Port, [], 1000), ReadyChan).
+	connect(gen_tcp:connect(Hostname, Port, [], 1000)).
 
 
 % Receives data from the server and passes it to buffer
