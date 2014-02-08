@@ -11,8 +11,6 @@
 %Contains the record definitions
 -include("ircParser.hrl").
 
-%Include Tests
-%-include("ircParser_test.erl").
 
 % Get the command part of a line
 % Produces tuple: {HasPrefix, Prefix, Rest}
@@ -135,7 +133,7 @@ lineParse(Str) ->
 			ChannelName = lists:nth(1, Params),
 			case getSetting(channel_info, ChannelName) of
 				#retVal{name=ChannelName, value=X} ->
-					%x should hold a setting server for this chan, update it's value.
+					% X should hold a setting server for this chan, update it's value.
 					X ! #setVal{name=topic, value=Trail},
 					{};
 				#noVal{name=ChannelName} ->
@@ -149,9 +147,9 @@ lineParse(Str) ->
 		"353"  -> print("JOIN", green, "Users: ~s~n", [Trail]), {};
 		"366"  -> print("JOIN", green, "End of users list~n", []), {};
 	        
-	        % Nick
-	        "NICK" -> print("NICK", blue, "~s changed to ~s~n", [Nick, Trail]),
-				#nick{nick={Nick,Trail}};
+        % Nick
+        "NICK" -> print("NICK", blue, "~s changed to ~s~n", [Nick, Trail]),
+			#nick{nick={Nick,Trail}};
 
 		% Part
 		"PART" -> print("PART", green, "~s parted ~s~n", [Nick, lists:nth(1, Params)]), {};
@@ -160,9 +158,12 @@ lineParse(Str) ->
 		"QUIT" -> print("QUIT", green, "~s quit (~s)~n", [Nick, Trail]), {};
 		
 		% Nick already in use
-		"433" -> print("ERROR", red, "Nick already in use.", []), {};
+		"433" -> print("ERROR", red, "Nick already in use.~n", []), {};
 
-		"436" -> print("ERROR", red, "Nick collision.", []), {};
+		"436" -> print("ERROR", red, "Nick collision.~n", []), {};
+
+		% Error
+		"ERROR" -> print("ERROR", red, "~s~n", [Trail]);
 
 		% Unknown commands
 		_A -> print("WARN", yellow, "Un-recognised command '~s': '~s'~n", [Command, Str]), {}

@@ -5,7 +5,7 @@
 -include_lib("settingsServer_test.erl").
 
 
-
+% Retreive a named value from a given settings server
 getSetting(Pid, Name) ->
 	Pid ! #getVal{name=Name, return_chan=self()},
 	receive
@@ -14,8 +14,10 @@ getSetting(Pid, Name) ->
 		#noVal{name=Name} -> #noVal{name=Name}
 	end.
 
+
 setting_server() -> setting_server(dict:new()).
 
+% Create a new settings server.
 setting_server(Dict) ->
 	receive
 		die ->

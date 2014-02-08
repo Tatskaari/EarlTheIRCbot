@@ -1,6 +1,8 @@
 -module(earlAdminPlugin).
 -include("ircParser.hrl").
+-include("earl.hrl").
 -export([earlAdminPlugin/0]).
+-import(settingsServer, [getSetting/2]).
 
 earlAdminPlugin() ->
 	receive
@@ -22,6 +24,17 @@ earlAdminPlugin() ->
 			sendPid ! #quit{reason=K};
 		#privmsg{admin=true, message="#q"} ->
 			sendPid ! #quit{reason="Earl Out"};
+
+		% Add admin
+		#privmsg{admin=true, message="#addAdmin " ++ K} ->
+			Admins = getSetting(settings, admins),
+			settings ! #setVal{name=admins, value=[Admins|K]};
+
+		% Remove admin
+		#privmsg{admin=true, message="#removeAdmin " ++ K} ->
+			Admins = getSetting(settings, admins) -- K,
+			io:format("~p~n", [Admins]),
+			settings ! #setVal{name=admins, value=[Admins]};
 
 		% Unloads modules
 		#privmsg{admin=true, from=From, target=To, message="#unload earlAdminPlugin"} ->
