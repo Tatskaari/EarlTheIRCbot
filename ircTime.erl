@@ -14,7 +14,7 @@ ircTime() ->
 	    #privmsg{target=Target, from=From, message="#t " ++ K} ->
 			N = get_Integer(K),
 			Message = if
-				N < 0 -> "Invalid input";
+				N < 0 orelse N > 100000000000 -> "Invalid input";
 				true -> date_to_string(seconds_to_date(N))
 			end,
 			sendPid ! #privmsg{from=From, target=Target, message=Message}					
