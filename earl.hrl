@@ -4,6 +4,7 @@
 -define(NICK, "GrayEarl").
 -define(USER, "graymalkin Sir_Earl Sir_Earl Sir_Earl").
 -define(COLORS, true).
+-define(AUTOJN, ["#bottesting"]).
 
 -record(getVal, {name, return_chan}).
 -record(noVal, {name}).
