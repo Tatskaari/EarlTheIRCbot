@@ -118,15 +118,14 @@ lineParse(Str) ->
 		% Channel join
 		"JOIN" -> 
 			print("JOIN", green, "~s joined ~s~n", [Nick, Trail]),
-			channel_info ! #getVal{name=Trail, return_chan=self()},
-			receive
+			case getSetting(channel_info, Trail) of
 				#retVal{name=Trail, value=X} ->
 					%x should hold a setting server for this chan, update it's value.
 					X ! #setVal{name=name, value=Trail},
 					{};
 				#noVal{name=Trail} ->
 					% we better start a settings server to hold details about this chan
-					NewSettingServer = spawn(earl, setting_server, []),
+					NewSettingServer = spawn(settingsServer, setting_server, []),
 					channel_info ! #setVal{name=Trail, value=NewSettingServer},
 					NewSettingServer ! #setVal{name=name, value=Trail},
 					{}
@@ -134,15 +133,14 @@ lineParse(Str) ->
 		"332"  ->
 			print("JOIN", green, "Topic: ~s~n", [Trail]), {},
 			ChannelName = lists:nth(1, Params),
-			channel_info ! #getVal{name=ChannelName, return_chan=self()},
-			receive
+			case getSetting(channel_info, ChannelName) of
 				#retVal{name=ChannelName, value=X} ->
 					%x should hold a setting server for this chan, update it's value.
 					X ! #setVal{name=topic, value=Trail},
 					{};
 				#noVal{name=ChannelName} ->
 					% we better start a settings server to hold details about this chan
-					NewSettingServer = spawn(earl, setting_server, []),
+					NewSettingServer = spawn(settingsServer, setting_server, []),
 					channel_info ! #setVal{name=ChannelName, value=NewSettingServer},
 					NewSettingServer ! #setVal{name=topic, value=Trail},
 					{}

@@ -11,13 +11,17 @@ getSetting(Pid, Name) ->
 	receive
 		#retVal{name=Name, value=X} -> 
 			X;
-		#noVal{name=Name} -> undefined
+		#noVal{name=Name} -> #noVal{name=Name}
 	end.
 
 setting_server() -> setting_server(dict:new()).
 
 setting_server(Dict) ->
 	receive
+		die ->
+			io:format("settings :: EXIT~n"),
+			exit(self(), normal);
+
 		#setVal{name=Name, value=Value} -> 
 			setting_server(dict:store(Name, Value, Dict));
 		#getVal{name=Name, return_chan=Chan} ->
@@ -26,9 +30,6 @@ setting_server(Dict) ->
 					Chan ! #retVal{name=Name, value=dict:fetch(Name, Dict)};
 				false ->
 					Chan ! #noVal{name=Name}
-			end;
-		die ->
-			io:format("settings :: EXIT~n"),
-			exit(self(), normal)	
+			end
 	end,
 	setting_server(Dict).
