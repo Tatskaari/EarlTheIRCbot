@@ -24,7 +24,7 @@ getValue(Server, Name) ->
 setValue(Server, Name, Value) ->
 	gen_server:call(Server, {setValue, Name, Value}).
 
-terminate(shutdown, _State) ->
+terminate(normal, _State) ->
     ok.
 
 handle_call({getSetting, Name}, _From, Dict) ->
