@@ -1,35 +1,47 @@
 -module(settingsServer).
--export([setting_server/0, getSetting/2]).
+-behaviour(gen_server).
+-export([start_link/0]).
+-export([getValue/2, setValue/3, stop/1]).
+-export([init/1, handle_call/3, handle_cast/2]).
+-export([handle_info/2, code_change/3, terminate/2]).
 -include("earl.hrl").
--include_lib("eunit/include/eunit.hrl").
--include_lib("settingsServer_test.erl").
+%-include_lib("eunit/include/eunit.hrl").
+%-include_lib("settingsServer_test.erl").
 
 
+start_link() ->
+    gen_server:start_link(settingsServer, [], []).
 
-getSetting(Pid, Name) ->
-	Pid ! #getVal{name=Name, return_chan=self()},
-	receive
-		#retVal{name=Name, value=X} -> 
-			X;
-		#noVal{name=Name} -> #noVal{name=Name}
-	end.
+init(_Args) ->
+    {ok, dict:new()}.
 
-setting_server() -> setting_server(dict:new()).
+stop(Server) ->
+	gen_server:cast(Server, stop).
 
-setting_server(Dict) ->
-	receive
-		die ->
-			io:format("settings :: EXIT~n"),
-			exit(self(), normal);
+getValue(Server, Name) ->
+	gen_server:call(Server, {getSetting, Name}).
 
-		#setVal{name=Name, value=Value} -> 
-			setting_server(dict:store(Name, Value, Dict));
-		#getVal{name=Name, return_chan=Chan} ->
-			case dict:is_key(Name, Dict) of
-				true ->
-					Chan ! #retVal{name=Name, value=dict:fetch(Name, Dict)};
-				false ->
-					Chan ! #noVal{name=Name}
-			end
+setValue(Server, Name, Value) ->
+	gen_server:call(Server, {setValue, Name, Value}).
+
+terminate(shutdown, _State) ->
+    ok.
+
+handle_call({getSetting, Name}, _From, Dict) ->
+	case dict:is_key(Name, Dict) of
+	true -> Ret =  dict:fetch(Name, Dict);
+	false -> Ret = undef
 	end,
-	setting_server(Dict).
+	{reply, Ret, Dict};
+handle_call({setValue, Name, Value}, _From, Dict) ->
+	{reply, true, dict:store(Name, Value, Dict)}.
+
+
+handle_cast(stop, State) ->
+	{stop, normal, State}.
+
+handle_info({'EXIT', _Pid, _Reason}, State) ->
+    {noreply, State}.
+
+code_change(_OldVsn, State, _Extra) ->
+    {ok, State}.
