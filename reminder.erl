@@ -25,13 +25,16 @@ reminder() ->
 					spawn(fun() -> echoIn(Time, {From, Target}) end)
 			end;
 		die ->
-			io:format("reminder :: EXIT")
+			io:format("reminder :: EXIT~n")
 	end,
 	reminder().
 
+% sends a message to To after Time seconds.
 echoIn(Time, {To, Target}) ->
 	timer:sleep(Time * 1000),
 	sendPid ! #privmsg{from=To, target=Target, message=To ++ ": Your timer is up!"}.
+
+% sends a message to To at Time gregorian seconds. 
 echoAt(Time, Message, {To, Target}) ->
 	CurrentTime = calendar:datetime_to_gregorian_seconds(erlang:localtime()),
 	SleepTime = Time - CurrentTime,
@@ -43,6 +46,7 @@ echoAt(Time, Message, {To, Target}) ->
 			sendPid ! #privmsg{from=To, target=Target, message=To ++ ": Reminder '" ++ Message ++ "'"}
 	end.
 
+% parses eff timer commands. Converts a string in the format H:M:S or M:S or M to seconds. 
 eggtimerParser(String) ->
 	TimeTuple = case string:tokens(String, ":") of
 		[Hour, Min, Sec] ->
@@ -84,7 +88,7 @@ dateParser(String) ->
 			
 	end.
 		
-
+% convers a time string in the form H:M:S or H:M or H to a tupele in the form {Hours, Mins, Seconds}
 timeStringToTuple(TimeString) ->
 	case string:tokens(TimeString, ":") of
 		[Hour, Min, Sec] ->
@@ -97,6 +101,7 @@ timeStringToTuple(TimeString) ->
 			error
 	end.
 
+% converts a string in the form Day/Month/Year to a tuple in the form {Year, Month, Day}
 dateStringToTuple(DateSting) ->
 	case string:tokens(DateSting, "/") of
 		[Day, Month, Year] ->
