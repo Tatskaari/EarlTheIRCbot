@@ -36,7 +36,8 @@ main() ->
 			bufferPid ! die,
 			parserPid ! die,
 			connectPid ! die,
-			settings ! die,
+			settingsServer:stop(settings),
+			settingsServer:stop(channel_info), % incomplete, this Server has sub servers...
 			io:format("mainPid :: EXIT~n"),
 			exit(self(), normal)
 	end.
