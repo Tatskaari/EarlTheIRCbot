@@ -13,7 +13,7 @@ reminder() ->
 		#privmsg{target=Target, from=From, message="#reminder " ++ Rest} ->
 			case dateParser(Rest) of
 				{GregorianTime, Reminder} ->
-					echoAt(GregorianTime, Reminder, {From, Target});
+					spawn(fun() -> echoAt(GregorianTime, Reminder, {From, Target}) end);
 				_ ->
 					sendPid ! #privmsg{target=Target, from=From, message=From ++ ": Input error"}
 			end;
@@ -22,7 +22,7 @@ reminder() ->
 				error ->
 					sendPid ! #privmsg{target=Target, from=From, message=From ++ ": Input error"};
 				Time ->
-					echoIn(Time, {From, Target})
+					spawn(fun() -> echoIn(Time, {From, Target}) end)
 			end;
 		die ->
 			io:format("reminder :: EXIT")
