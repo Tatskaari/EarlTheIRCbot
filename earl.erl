@@ -12,8 +12,10 @@ main() ->
 	register(connectPid, spawn(earlConnection, connect, [?HOSTNAME, ?PORT])),
 	register(parserPid, spawn(messageRouter, parse, [])),
 	register(mainPid, self()),
-	register(settings, spawn(fun() -> settingsServer:setting_server() end)),
-	register(channel_info, spawn(fun() -> settingsServer:setting_server() end)),
+	{ok, SettingsPid} = settingsServer:start_link(),
+	{ok, ChanInfoPid} = settingsServer:start_link(),
+	register(settings, SettingsPid),
+	register(channel_info, ChanInfoPid),
 
 	% Start the plugins
 	start(),
@@ -41,7 +43,7 @@ main() ->
 
 start() ->
 	% Set up admin list
-	settings ! #setVal{name=admins, value=["graymalkin", "Tatskaari", "Mex", "xand", "Tim"]},
+	settingsServer:setValue(settings, admins, ["graymalkin", "Tatskaari", "Mex", "xand", "Tim"]),
 
 	% Send module registrations
 	parserPid ! #registerPlugin{name="earlAdminPlugin"},
@@ -62,7 +64,7 @@ getLine(A) ->
 % Builds the messages sent by the server and prints them out
 buffer() ->
 	buffer("").
-buffer(Buffer)->
+buffer(Buffer) ->
 	case getLine(Buffer) of
 		{false, _ } ->
 			receive

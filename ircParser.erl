@@ -1,12 +1,7 @@
 -module(ircParser).
 -export([lineParse/1, print/4, getCommand/1, getTrail/1, getPrefix/1, isAdmin/2]).
 -include_lib("eunit/include/eunit.hrl").
--import(settingsServer, [getSetting/2]).
--import(optimusPrime, [optimusPrime/0]).
--import(time, [timer/0]).
--import(telnet, [telnet/0]).
--import(earlAdminPlugin, [earlAdminPlugin/0]).
--import(reminder, [reminder/0]).
+-import(settingsServer, [getValue/2, setValue/3, start_link/0]).
 -include("earl.hrl").
 
 %Contains the record definitions
@@ -63,8 +58,7 @@ isAdmin(Str, List) ->
 
 
 getAdmins() ->
-	getSetting(settings, admins).
-
+	settingsServer:getValue(settings, admins).
 
 % Parse a line
 lineParse(Str) ->
@@ -75,7 +69,10 @@ lineParse(Str) ->
 	IsAdmin = isAdmin(Nick, getAdmins()),
 
 	case Command of
-		"PRIVMSG" -> #privmsg{target=lists:nth(1, Params), from=Nick,  admin=IsAdmin, message=Trail};
+		"PRIVMSG" ->
+		       Target = lists:nth(1, Params),	
+			print("PRIVMSG", blue, "[~s -> ~s]: ~s~n", [Nick, Target, Trail]),
+			#privmsg{target=lists:nth(1, Params), from=Nick,  admin=IsAdmin, message=Trail};
 		"PING" -> #ping{nonce=Trail};
 		"MODE" -> #mode{modes=Trail};
 		"NOTICE" -> 
@@ -91,17 +88,18 @@ lineParse(Str) ->
 		% End of MOTD
 		"376" -> {};
 		%welcome
-		"001" -> print("INFO", blue, "~s~n", [Trail]), {};
+		"001" -> print("INFO(001)", blue, "~s~n", [Trail]), {};
 		%welcome
-		"002" -> print("INFO", blue, "~s~n", [Trail]), {};
+		"002" -> print("INFO(002)", blue, "~s~n", [Trail]), {};
 		%welcome
-		"003" -> print("INFO", blue, "~s~n", [Trail]), {};
+		"003" -> print("INFO(003)", blue, "~s~n", [Trail]), {};
 		%RPL_MYINFO
 		"004" ->
-			settings ! #setVal{name=server_name, value=lists:nth(2, Params)},
-			settings ! #setVal{name=server_version, value=lists:nth(3, Params)},
-			settings ! #setVal{name=user_modes, value=lists:nth(4, Params)},
-			settings ! #setVal{name=chan_modes, value=lists:nth(5, Params)},
+			print("INFO(004)", blue, "~s~n", [CommandsAndParams]),
+			settingsServer:setValue(settings, server_name, lists:nth(2, Params)),
+			settingsServer:setValue(settings, server_version, lists:nth(3, Params)),
+			settingsServer:setValue(settings, user_modes, lists:nth(4, Params)),
+			settingsServer:setValue(settings, chan_modes, lists:nth(5, Params)),
 			{};
 			%TODO: this in incomplete for some servers
 
@@ -119,33 +117,13 @@ lineParse(Str) ->
 		% Channel join
 		"JOIN" -> 
 			print("JOIN", green, "~s joined ~s~n", [Nick, Trail]),
-			case getSetting(channel_info, Trail) of
-				#retVal{name=Trail, value=X} ->
-					%x should hold a setting server for this chan, update it's value.
-					X ! #setVal{name=name, value=Trail},
-					{};
-				#noVal{name=Trail} ->
-					% we better start a settings server to hold details about this chan
-					NewSettingServer = spawn(settingsServer, setting_server, []),
-					channel_info ! #setVal{name=Trail, value=NewSettingServer},
-					NewSettingServer ! #setVal{name=name, value=Trail},
-					{}
-			end;
+			%storeChanInfo(Trail, name, Trail),
+			{};
 		"332"  ->
-			print("JOIN", green, "Topic: ~s~n", [Trail]), {},
+			print("JOIN", green, "Topic: ~s~n", [Trail]), 
 			ChannelName = lists:nth(1, Params),
-			case getSetting(channel_info, ChannelName) of
-				#retVal{name=ChannelName, value=X} ->
-					%x should hold a setting server for this chan, update it's value.
-					X ! #setVal{name=topic, value=Trail},
-					{};
-				#noVal{name=ChannelName} ->
-					% we better start a settings server to hold details about this chan
-					NewSettingServer = spawn(settingsServer, setting_server, []),
-					channel_info ! #setVal{name=ChannelName, value=NewSettingServer},
-					NewSettingServer ! #setVal{name=topic, value=Trail},
-					{}
-			end;
+			%storeChanInfo(ChannelName, topic, Trail),
+			{};
 		"333"  -> print("JOIN", green, "Topic set by ~s at ~s~n", [lists:nth(3, Params), msToDate(lists:nth(4, Params)) ]), {};
 		"353"  -> print("JOIN", green, "Users: ~s~n", [Trail]), {};
 		"366"  -> print("JOIN", green, "End of users list~n", []), {};
@@ -170,18 +148,21 @@ lineParse(Str) ->
 	end.
 
 storeChanInfo(ChannelName, Param, Data) ->
-	channel_info ! #getVal{name=ChannelName, return_chan=self()},
-	receive
-		#retVal{name=ChannelName, value=X} ->
-			%x should hold a setting server for this chan, update it's value.
-			X ! #setVal{name=Param, value=Data},
-			{};
-		#noVal{name=ChannelName} ->
-			% we better start a settings server to hold details about this chan
-			NewSettingServer = spawn(earl, setting_server, []),
-			channel_info ! #setVal{name=ChannelName, value=NewSettingServer},
-			NewSettingServer ! #setVal{name=Param, value=Data},
-			{}
+	ChanServer = settingsServer:getValue(channel_info, ChannelName),
+	case ChanServer of
+		undef ->
+			NewServer = settingsServer:start_link(),
+			settingsServer:setValue(channel_info, ChannelName, NewServer),
+			settingsServer:setValue(NewServer, Param, Data);
+		X ->
+			settingsServer:setValue(X, Param, Data)
+	end.
+
+getChanInfo(ChannelName, Param) ->
+	case settingsServer:getValue(channel_info, ChannelName) of
+		undef -> {false, undef};
+		X ->
+			{true, settingsServer:getValue(X, Param)}
 	end.
 
 
