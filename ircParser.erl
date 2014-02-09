@@ -70,7 +70,7 @@ lineParse(Str) ->
 
 	case Command of
 		"PRIVMSG" ->
-		       Target = lists:nth(1, Params),	
+			Target = lists:nth(1, Params),	
 			print("PRIVMSG", blue, "[~s -> ~s]: ~s~n", [Nick, Target, Trail]),
 			#privmsg{target=lists:nth(1, Params), from=Nick,  admin=IsAdmin, message=Trail};
 		"PING" -> #ping{nonce=Trail};
@@ -117,12 +117,12 @@ lineParse(Str) ->
 		% Channel join
 		"JOIN" -> 
 			print("JOIN", green, "~s joined ~s~n", [Nick, Trail]),
-			%storeChanInfo(Trail, name, Trail),
+			storeChanInfo(Trail, name, Trail),
 			{};
 		"332"  ->
 			print("JOIN", green, "Topic: ~s~n", [Trail]), 
 			ChannelName = lists:nth(1, Params),
-			%storeChanInfo(ChannelName, topic, Trail),
+			storeChanInfo(ChannelName, topic, Trail),
 			{};
 		"333"  -> print("JOIN", green, "Topic set by ~s at ~s~n", [lists:nth(3, Params), msToDate(lists:nth(4, Params)) ]), {};
 		"353"  -> print("JOIN", green, "Users: ~s~n", [Trail]), {};
@@ -137,6 +137,14 @@ lineParse(Str) ->
 
 		% Quits
 		"QUIT" -> print("QUIT", green, "~s quit (~s)~n", [Nick, Trail]), {};
+
+		%topic
+		"TOPIC" -> 
+			Channel = lists:nth(1, Params),
+			OldTopic = getChanInfo(Channel, topic),
+			print("TOPIC", green, "~s set topic of ~s to '~s'", [Nick, Channel, Trail]),
+			storeChanInfo(Channel, topic, Trail),
+			#topic{channel=Channel, old_topic=OldTopic, new_topic=Trail, setby=Nick};
 		
 		% Nick already in use
 		"433" -> print("ERROR", red, "Nick already in use.", []), {};
@@ -151,9 +159,13 @@ storeChanInfo(ChannelName, Param, Data) ->
 	ChanServer = settingsServer:getValue(channel_info, ChannelName),
 	case ChanServer of
 		undef ->
-			NewServer = settingsServer:start_link(),
-			settingsServer:setValue(channel_info, ChannelName, NewServer),
-			settingsServer:setValue(NewServer, Param, Data);
+			case settingsServer:start_link() of
+				{ok, NewServer} ->
+					settingsServer:setValue(channel_info, ChannelName, NewServer),
+					settingsServer:setValue(NewServer, Param, Data);
+				_Else ->
+					print("WARNING", red, "Couldn't create serrtingsServer for channel '~s'", [ChannelName])
+			end;
 		X ->
 			settingsServer:setValue(X, Param, Data)
 	end.

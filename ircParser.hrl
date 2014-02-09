@@ -10,6 +10,7 @@
 -record(part, {channel}).
 -record(quit, {reason}).
 -record(mode, {modes}).
+-record(topic, {channel, old_topic, new_topic, setby}).
 
 -record(notice, {target, message}).
 
