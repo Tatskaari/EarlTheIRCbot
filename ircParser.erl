@@ -80,19 +80,27 @@ lineParse(Str) ->
 			#notice{target=lists:nth(1, Params), message=Trail};
 
 		% MOTD, print it and throw it away %
-		"372"  -> print("MOTD", green, "~s~n", [Trail]), {};
+		"372"  -> 
+			print("MOTD", green, "~s~n", [Trail]),
+			#raw{data=Str};
 		
 		% Start of MOTD
-		"375" -> {};
+		"375" -> #raw{data=Str};
 			
 		% End of MOTD
-		"376" -> {};
+		"376" -> #raw{data=Str};
 		%welcome
-		"001" -> print("INFO(001)", blue, "~s~n", [Trail]), {};
+		"001" -> 
+			print("INFO(001)", blue, "~s~n", [Trail]), 
+			#raw{data=Str};
 		%welcome
-		"002" -> print("INFO(002)", blue, "~s~n", [Trail]), {};
+		"002" -> 
+			print("INFO(002)", blue, "~s~n", [Trail]), 
+			#raw{data=Str};
 		%welcome
-		"003" -> print("INFO(003)", blue, "~s~n", [Trail]), {};
+		"003" -> 
+			print("INFO(003)", blue, "~s~n", [Trail]),
+			#raw{data=Str};
 		%RPL_MYINFO
 		"004" ->
 			print("INFO(004)", blue, "~s~n", [CommandsAndParams]),
@@ -100,11 +108,11 @@ lineParse(Str) ->
 			settingsServer:setValue(settings, server_version, lists:nth(3, Params)),
 			settingsServer:setValue(settings, user_modes, lists:nth(4, Params)),
 			settingsServer:setValue(settings, chan_modes, lists:nth(5, Params)),
-			{};
+			#raw{data=Str};
 			%TODO: this in incomplete for some servers
 
 		% Server options
-		"005" -> print("SERV", green, "~s~n", [Trail]), {};
+		"005" -> print("SERV(005)", green, "~s~n", [Trail]), {};
 
 		% Server users
 		"251" -> print("USERS", green, "~s~n", [Trail]), {};
