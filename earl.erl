@@ -54,7 +54,8 @@ start() ->
 	parserPid ! #registerPlugin{name="optimusPrime"},
 	parserPid ! #registerPlugin{name="telnet"},
 	parserPid ! #registerPlugin{name="reminder"},
-	parserPid ! #registerPlugin{name="ircTime"}.
+	%parserPid ! #registerPlugin{name="ircTime"}.
+	gen_event:add_handler(irc_messages, ircTime, []),
 
 getLine(A) ->
 	Index = string:str(A, "\n"),
