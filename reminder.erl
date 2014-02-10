@@ -1,33 +1,45 @@
 -module(reminder).
--export([reminder/0, eggtimerParser/1, stringToInt/1]).
+-behaviour(gen_event).
+-export([init/1, handle_event/2]).
+-export([handle_info/2, code_change/3]).
+-export([eggtimerParser/1, stringToInt/1]).
 
 % test test test
--include_lib("eunit/include/eunit.hrl").
--include("reminder_test.erl").
+%-include_lib("eunit/include/eunit.hrl").
+%-include("reminder_test.erl").
 
 %Contains the record definitions
 -include("ircParser.hrl").
 
-reminder() ->
-	receive
-		#privmsg{target=Target, from=From, message="#reminder " ++ Rest} ->
-			case dateParser(Rest) of
-				{GregorianTime, Reminder} ->
-					spawn(fun() -> echoAt(GregorianTime, Reminder, {From, Target}) end);
-				_ ->
-					sendPid ! #privmsg{target=Target, from=From, message=From ++ ": Input error"}
-			end;
-		#privmsg{target=Target, from=From, message="#eggtimer " ++ Rest} ->
-			case eggtimerParser(Rest) of
-				error ->
-					sendPid ! #privmsg{target=Target, from=From, message=From ++ ": Input error"};
-				Time ->
-					spawn(fun() -> echoIn(Time, {From, Target}) end)
-			end;
-		die ->
-			io:format("reminder :: EXIT~n")
+init(_Args) ->
+	{ok, []}.
+
+handle_event(#privmsg{target=Target, from=From, message="#reminder " ++ Rest}, State) ->
+	case dateParser(Rest) of
+		{GregorianTime, Reminder} ->
+			spawn(fun() -> echoAt(GregorianTime, Reminder, {From, Target}) end);
+		_ ->
+			sendPid ! #privmsg{target=Target, from=From, message=From ++ ": Input error"}
 	end,
-	reminder().
+	{ok, State};
+
+handle_event(#privmsg{target=Target, from=From, message="#eggtimer " ++ Rest}, State) ->
+	case eggtimerParser(Rest) of
+		error ->
+			sendPid ! #privmsg{target=Target, from=From, message=From ++ ": Input error"};
+		Time ->
+			spawn(fun() -> echoIn(Time, {From, Target}) end)
+	end,
+	{ok, State};
+
+handle_event(_Event, State) ->
+	{ok, State}.
+
+handle_info({'EXIT', _Pid, _Reason}, State) ->
+    {ok, State}.
+
+code_change(_OldVsn, State, _Extra) ->
+    {ok, State}.
 
 % sends a message to To after Time seconds.
 echoIn(Time, {To, Target}) ->
@@ -109,6 +121,7 @@ dateStringToTuple(DateSting) ->
 		_ -> 
 			error
 	end.
+
 
 % utils
 

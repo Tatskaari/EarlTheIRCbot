@@ -1,5 +1,8 @@
 -module(optimusPrime).
--export([optimusPrime/0, primesTo/2, isPrime/2, get_Integer/1]).
+-behaviour(gen_event).
+-export([init/1, handle_event/2, handle_call/3, terminate/2]).
+-export([handle_info/2, code_change/3]).
+-export([primesTo/2, isPrime/2, get_Integer/1]).
 
 %Contains the record definitions
 -include("ircParser.hrl").
@@ -7,19 +10,31 @@
 % Unit tests
 -include_lib("eunit/include/eunit.hrl").
 
-%%% IRC part here, maths below %%%
-optimusPrime() ->
-	receive
-		die ->
-			io:format("primePid :: EXIT~n"),
-			exit(self(), normal);
-		#privmsg{target=Target, from=From, message="#primesTo " ++ K} ->
-			spawn(optimusPrime, primesTo, [send, {K, From, Target}]);	
-		#privmsg{target=Target, from=From, message="#isPrime " ++ K} ->
-			spawn(optimusPrime, isPrime, [send, {K, From, Target}])
-	end,
-	?MODULE:optimusPrime().
+init(_Args) ->
+	{ok, []}.
 
+handle_event(#privmsg{target=Target, from=From, message="#primesTo " ++ K}, State) ->
+	spawn(optimusPrime, primesTo, [send, {K, From, Target}]),
+	{ok, State};
+
+handle_event(#privmsg{target=Target, from=From, message="#isPrime " ++ K}, State) ->
+	spawn(optimusPrime, isPrime, [send, {K, From, Target}]),
+	{ok, State};
+
+handle_event(_Event, State) ->
+	{ok, State}.
+
+terminate(_Args, _State) ->
+    ok.
+
+handle_info({'EXIT', _Pid, _Reason}, State) ->
+    {ok, State}.
+
+handle_call(_Request, _From, State) ->
+	{ok, State}.
+
+code_change(_OldVsn, State, _Extra) ->
+    {ok, State}.
 
 % prints all the primes before K
 primesTo(send, {K, From, Target}) ->
