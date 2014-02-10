@@ -17,6 +17,8 @@ main() ->
 	register(settings, SettingsPid),
 	register(channel_info, ChanInfoPid),
 
+
+	gen_event:start_link({local, irc_messages}),
 	% Start the plugins
 	start(),
 
@@ -47,7 +49,8 @@ start() ->
 	settingsServer:setValue(settings, admins, ["graymalkin", "Tatskaari", "Mex", "xand", "Tim"]),
 
 	% Send module registrations
-	parserPid ! #registerPlugin{name="earlAdminPlugin"},
+	%parserPid ! #registerPlugin{name="earlAdminPlugin"},
+	gen_event:add_handler(irc_messages, earlAdminPlugin, []),
 	parserPid ! #registerPlugin{name="optimusPrime"},
 	parserPid ! #registerPlugin{name="telnet"},
 	parserPid ! #registerPlugin{name="reminder"},
