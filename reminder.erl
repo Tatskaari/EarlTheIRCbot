@@ -54,6 +54,9 @@ echoAt(Time, Message, {To, Target}) ->
 		SleepTime < 0 ->
 			sendPid ! #privmsg{from=To, target=Target, message=To ++ ": Error, time is in the past"};
 		true ->
+			{{Year, Month, Day},{Hour, Min, Sec}} = calendar:gregorian_seconds_to_datetime(Time),
+			StringTime = io_lib:format("~2..0B:~2..0B:~2..0B, ~2..0B/~2..0B/~4..0B", [Hour, Min, Sec, Day, Month, Year]),
+			sendPid ! #privmsg{from=To, target=Target, message=To ++ ": Setting reminder for " ++ StringTime},
 			timer:sleep(SleepTime * 1000),
 			sendPid ! #privmsg{from=To, target=Target, message=To ++ ": Reminder '" ++ Message ++ "'"}
 	end.
