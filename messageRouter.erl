@@ -13,32 +13,33 @@
 parse() ->
 	parse([]).
 
-parse(PluginsChans) ->
+parse(PluginsNames) ->
     receive
 		die ->
 			io:format("parserPid :: EXIT~n"),
-			lists:foreach(fun({Pid,_}) -> Pid ! die end, PluginsChans),
+			lists:foreach(fun(Name) -> gen_event:delete_handler(irc_messages, Name, []) end, PluginsNames),
 			exit(self(), normal);
 
     	% deal with registerPlugin requests by adding them to the chan list
 		#registerPlugin{name=Name} ->
-			io:format("adding plugin"),
+			io:format("adding plugin '~s'", [Name]),
 			NameAttom = list_to_atom(Name),
-			Chan = spawn(NameAttom, NameAttom, []),
-			?MODULE:parse([{Chan,Name}|PluginsChans]);
+			gen_event:add_handler(irc_messages, NameAttom, []),
+			?MODULE:parse([Name|PluginsNames]);
 
 		% deregister plugins
 		#deregisterPlugin{name=Name} ->
 			io:format("UNLOADING MODULE : ~s~n", [Name]),
-			F = fun({Chan, N}) ->
-					case {Chan, N} of
-						{Chan, Name} ->
-							Chan ! die,
-							?MODULE:parse(PluginsChans -- [{Chan, Name}]);
-						_Default -> false 
-					end
-				end,
-			lists:foreach(F, PluginsChans);
+			F = fun(N) ->
+				if
+					N == Name -> 
+						gen_event:delete_handler(error_man, terminal_logger, []),
+						?MODULE:parse(PluginsNames -- [Name]);
+					true ->
+						false
+				end
+			end,
+			lists:foreach(F, PluginsNames);
 
 
 		T->
@@ -46,10 +47,8 @@ parse(PluginsChans) ->
 			case Line of
 				{} -> false;
 				_A ->
+					gen_event:notify(irc_messages, Line),
 					% Anonnomous function (F) to send line to every registered plugin
-					F = fun({Chan, _}) -> Chan ! Line end,
-					% For each plugin run F against it
-					lists:foreach(F, PluginsChans),
 
 					% Built in commands which are required for the protocol
 					case Line of
@@ -63,11 +62,11 @@ parse(PluginsChans) ->
 								M = io_lib:format("~p", [Chan]),
 								sendPid ! #privmsg{target=To, message=("Plugin: " ++ M)}
 							end,
-							lists:foreach(ListPlugins, PluginsChans);
+							lists:foreach(ListPlugins, PluginsNames);
 
 						% We don't know about everything - let's not deal with it.	
 						_Default -> false 
 					end
 			end
     end,
-    ?MODULE:parse(PluginsChans).
+    ?MODULE:parse(PluginsNames).

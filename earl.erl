@@ -49,13 +49,11 @@ start() ->
 	settingsServer:setValue(settings, admins, ["graymalkin", "Tatskaari", "Mex", "xand", "Tim"]),
 
 	% Send module registrations
-	%parserPid ! #registerPlugin{name="earlAdminPlugin"},
-	gen_event:add_handler(irc_messages, earlAdminPlugin, []),
-	gen_event:add_handler(irc_messages, optimusPrime, []),
+	parserPid ! #registerPlugin{name="earlAdminPlugin"},
+	parserPid ! #registerPlugin{name="optimusPrime"},
 	parserPid ! #registerPlugin{name="telnet"},
 	parserPid ! #registerPlugin{name="reminder"},
-	%parserPid ! #registerPlugin{name="ircTime"}.
-	gen_event:add_handler(irc_messages, ircTime, []),
+	parserPid ! #registerPlugin{name="ircTime"}.
 
 getLine(A) ->
 	Index = string:str(A, "\n"),
