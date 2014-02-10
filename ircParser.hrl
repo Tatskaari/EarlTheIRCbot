@@ -1,7 +1,7 @@
 % Records for the various types of message that can be sent
 -record(privmsg, {target, from, admin, message}).
 -record(command, {command, data}).
--record(raw, {data}).
+-record(raw, {data, numbercode, trail}).
 -record(ping, {nonce}).
 -record(pong, {nonce}).
 -record(user, {user}).
@@ -11,6 +11,7 @@
 -record(quit, {reason}).
 -record(mode, {modes}).
 -record(topic, {channel, old_topic, new_topic, setby}).
+-record(motd, {message}).
 
 -record(notice, {target, message}).
 
