@@ -1,43 +1,50 @@
 -module(telnet).
--export([telnet/0, startSession/3, pidList/0]).
+-behaviour(gen_event).
+-export([init/1, handle_event/2, terminate/2]).
+-export([handle_info/2, code_change/3]).
+-export([startSession/3, pidList/0]).
 
 %Contains the record definitions
 -include("ircParser.hrl").
 
 % init the module then call the receive loop
-telnet() ->
-	register(pidListPid, spawn(telnet, pidList,[])),
-	loop().
-loop() ->
-	receive
-		%stops telnet happening outside of private chats
-		#privmsg{target="#" ++ Target, from=From, message="#telnet" ++ _} ->
-			sendPid ! #privmsg{target=("#"++Target), message=(From ++ ": Please use private chat for telnet.")};
+init(_Args) ->
+	Pid = spawn(telnet, pidList,[]),
+	{ok, Pid}.
 
-		% Starts a session for the user: #telnet connect <HOST> <PORT>
-		#privmsg{from=From, message="#telnet connect " ++ K} ->
-			case string:tokens(K, " ") of
-				[Host, Port] ->
-					pidListPid ! {add, spawn(telnet, startSession,[Host, stringToInt(Port), From])};
-				_ ->
-					noMatch
-			end;
-		
-		% Kills the session of the user: #telnet disconnect 
-		#privmsg{from=From, message="#telnet disconnect"} ->
-			pidListPid ! {disconnect, From};
+handle_event(#privmsg{target="#" ++ Target, from=From, message="#telnet" ++ _}, Pid) ->
+	sendPid ! #privmsg{target=("#"++Target), message=(From ++ ": Please use private chat for telnet.")},
+	{ok, Pid};
 
-		% sends albert terry strings to the server: #telnet <STRING>
-		#privmsg{from=From, message="#telnet " ++ K} ->
-			Message = re:replace(K,"\\\\r\\\\n", "\r\n",[{return,list}]),
-			pidListPid ! {sendMessage, Message, From};
-
-		die ->
-			io:format("telnetPid :: EXIT~n"),
-			pidListPid ! die,
-			exit(self(), normal)
+handle_event(#privmsg{from=From, message="#telnet connect " ++ K}, Pid) ->
+	case string:tokens(K, " ") of
+		[Host, Port] ->
+			Pid ! {add, spawn(telnet, startSession,[Host, stringToInt(Port), From])};
+		_ ->
+			noMatch
 	end,
-	loop().
+	{ok, Pid};
+
+handle_event(#privmsg{from=From, message="#telnet disconnect"}, Pid) ->
+	Pid ! {disconnect, From},
+	{ok, Pid};
+
+handle_event(#privmsg{from=From, message="#telnet " ++ K}, Pid) ->
+	Message = re:replace(K,"\\\\r\\\\n", "\r\n",[{return,list}]),
+	Pid ! {sendMessage, Message, From},
+	{ok, Pid};
+
+handle_event(_Event, Pid) ->
+	{ok, Pid}.
+
+terminate(_Args, _State) ->
+    ok.
+
+handle_info({'EXIT', _Pid, _Reason}, State) ->
+    {ok, State}.
+
+code_change(_OldVsn, State, _Extra) ->
+    {ok, State}.
 
 % converts a list of ints into the integer they represent 
 stringToInt(Str) ->
@@ -104,7 +111,7 @@ pidList(PidList) ->
 			pidList(PidList ++ [Pid]);
 		{remove, Pid} ->
 			pidList(PidList -- [Pid]);
-		{getList, Pid} ->
+		{getList, _Pid} ->
 			io:format("~p~n", PidList);
 		{disconnect, From} ->
 			lists:foreach(fun(Pid) -> Pid ! {disconnect , From} end, PidList);
