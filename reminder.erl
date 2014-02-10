@@ -2,7 +2,7 @@
 -behaviour(gen_event).
 -export([init/1, handle_event/2]).
 -export([handle_info/2, code_change/3]).
--export([eggtimerParser/1, stringToInt/1]).
+-export([secsToTimeStamp/1]).
 
 % test test test
 %-include_lib("eunit/include/eunit.hrl").
@@ -55,7 +55,8 @@ echoAt(Time, Message, {To, Target}) ->
 			sendPid ! #privmsg{from=To, target=Target, message=To ++ ": Error, time is in the past"};
 		true ->
 			{{Year, Month, Day},{Hour, Min, Sec}} = calendar:gregorian_seconds_to_datetime(Time),
-			StringTime = io_lib:format("~2..0B:~2..0B:~2..0B, ~2..0B/~2..0B/~4..0B", [Hour, Min, Sec, Day, Month, Year]),
+			{HoursTo, MinsTo, SecsTo} = secsToTimeStamp(SleepTime),
+			StringTime = io_lib:format("~2..0B:~2..0B:~2..0B, ~2..0B/~2..0B/~4..0B (~ph, ~pm and ~ps from now)", [Hour, Min, Sec, Day, Month, Year, HoursTo, MinsTo, SecsTo]),
 			sendPid ! #privmsg{from=To, target=Target, message=To ++ ": Setting reminder for " ++ StringTime},
 			timer:sleep(SleepTime * 1000),
 			sendPid ! #privmsg{from=To, target=Target, message=To ++ ": Reminder '" ++ Message ++ "'"}
@@ -153,6 +154,13 @@ stringToInt(Str) ->
         			F
         	end
     end.
+
+% Seconds -> {Hour, Min, Sec}
+secsToTimeStamp(Seconds) ->
+	Hour = trunc(Seconds / (60 * 60)),
+	Min = trunc((Seconds - (Hour * 60 * 60)) / 60),
+	Sec = (Seconds - (Hour * 60 * 60) - (Min * 60)),
+	{Hour, Min, Sec}.
 
 % input validation helper methods
 validTime({Hour, Min, Sec}) ->
