@@ -37,18 +37,17 @@ code_change(_OldVsn, State, _Extra) ->
 
 % convers the date to a string in the form of <hour>:<minute>:<second>, <day><postfix> of <month>, <year>
 date_to_string({Date, Time}) -> 
-	{Yeart,Montht,Dayt} = Date,
-	{Hourt,Mint,Sect} = Time,
-	case Dayt of
-		1 -> DayPrfx = "st";
-		2 -> DayPrfx = "nd";
-		3 -> DayPrfx = "rd";
-		_ -> DayPrfx = "th"
+	{Year,Montht,Day} = Date,
+	{Hour,Min,Sec} = Time,
+	DayPrfx = case Day of
+		1 -> "st";
+		2 -> "nd";
+		3 -> "rd";
+		_ -> "th"
 	end,
 	Month = lists:nth(Montht, ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]), 
-	IntToString = fun(A) -> lists:flatten(io_lib:format("~p", [A])) end,
-	[Hour, Min, Sec, Day, Year] = lists:map(IntToString, [Hourt, Mint, Sect, Dayt, Yeart]), % aplies IntToString to each element in the list
-	Hour ++ ":" ++ Min ++ ":" ++ Sec ++ ", " ++ Day ++ DayPrfx ++ " of " ++ Month ++ ", " ++ Year.
+	
+	io_lib:format("~2..0B:~2..0B:~2..0B, ~2..0B~s of ~s, ~4..0B", [Hour, Min, Sec, Day, DayPrfx, Month, Year]).
 
 seconds_to_date(K) ->
 	BaseDate      = calendar:datetime_to_gregorian_seconds({{1970,1,1},{0,0,0}}),
