@@ -104,7 +104,7 @@ pidList(PidList) ->
 			pidList(PidList ++ [Pid]);
 		{remove, Pid} ->
 			pidList(PidList -- [Pid]);
-		{getList, Pid} ->
+		{getList, _} ->
 			io:format("~p~n", PidList);
 		{disconnect, From} ->
 			lists:foreach(fun(Pid) -> Pid ! {disconnect , From} end, PidList);
@@ -115,10 +115,3 @@ pidList(PidList) ->
 			exit(self(), normal)
 	end,
 	pidList(PidList).
-
-% helper functoin to send each pid a message
-sendPidsMessage([], _, _) ->
-	ok;
-sendPidsMessage([Head|Tail], Message, From) ->
-	Head ! {command, Message, From},
-	sendPidsMessage(Tail, Message, From).
