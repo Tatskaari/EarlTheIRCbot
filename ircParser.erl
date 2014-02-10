@@ -194,9 +194,9 @@ msToDate(Str) ->
 	{Date, Time}  = calendar:gregorian_seconds_to_datetime(Seconds),
 	ircTime:date_to_string({Date, Time}).
 
- 
+-ifdef(COLORS). 
 % Prints a message in a given colour
-print(Catagory, Color, Message, Params) when ?COLORS ->
+print(Catagory, Color, Message, Params) ->
 	case Color of
 		red ->
 			io:format("\e[0;31m" ++ Catagory ++ "\e[0;37m" ++ ": " ++ Message, Params);
@@ -212,6 +212,8 @@ print(Catagory, Color, Message, Params) when ?COLORS ->
 
 		_Default ->
 			io:format(Catagory ++ ": " ++ Message, Params)
-	end;
+	end.
+-else.
 print(Catagory, _Color, Message, Params) ->
 	io:format(Catagory ++ ": " ++ Message, Params).
+-endif.
