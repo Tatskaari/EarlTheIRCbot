@@ -14,7 +14,7 @@
 init(_Args) ->
 	{ok, []}.
 
-handle_event(#privmsg{target=Target, from=From, message="#reminder " ++ Rest}, State) ->
+handle_event(#privmsg{target=Target, from=From, message="#remind me at " ++ Rest}, State) ->
 	case dateParser(Rest) of
 		{GregorianTime, Reminder} ->
 			spawn(fun() -> echoAt(GregorianTime, Reminder, {From, Target}) end);
@@ -23,7 +23,7 @@ handle_event(#privmsg{target=Target, from=From, message="#reminder " ++ Rest}, S
 	end,
 	{ok, State};
 
-handle_event(#privmsg{target=Target, from=From, message="#eggtimer " ++ Rest}, State) ->
+handle_event(#privmsg{target=Target, from=From, message="#remind me in " ++ Rest}, State) ->
 	case eggtimerParser(Rest) of
 		error ->
 			sendPid ! #privmsg{target=Target, from=From, message=From ++ ": Input error"};
