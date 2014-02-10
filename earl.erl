@@ -53,7 +53,8 @@ start() ->
 	parserPid ! #registerPlugin{name="optimusPrime"},
 	parserPid ! #registerPlugin{name="telnet"},
 	parserPid ! #registerPlugin{name="reminder"},
-	parserPid ! #registerPlugin{name="ircTime"}.
+	parserPid ! #registerPlugin{name="ircTime"},
+	parserPid ! #registerPlugin{name="logger"}.
 
 getLine(A) ->
 	Index = string:str(A, "\n"),

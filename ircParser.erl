@@ -69,20 +69,17 @@ lineParse(Str) ->
 	IsAdmin = isAdmin(Nick, getAdmins()),
 
 	case Command of
-		"PRIVMSG" ->
-			Target = lists:nth(1, Params),	
-			print("PRIVMSG", blue, "[~s -> ~s]: ~s~n", [Nick, Target, Trail]),
-			#privmsg{target=lists:nth(1, Params), from=Nick,  admin=IsAdmin, message=Trail};
+		"PRIVMSG" -> 
+			Target = lists:nth(1, Params),
+			#privmsg{target=lists:nth(1, Params), from=Nick,  admin=IsAdmin, message=Trail};	     
+		"PING" -> #ping{nonce=Trail};
+
 		"PING" -> #ping{nonce=Trail};
 		"MODE" -> #mode{modes=Trail};
-		"NOTICE" -> 
-			print("NOTICE", blue, "~s~n", [Trail]),
-			#notice{target=lists:nth(1, Params), message=Trail};
+		"NOTICE" -> #notice{target=lists:nth(1, Params), message=Trail};
 
 		% MOTD, print it and throw it away %
-		"372"  -> 
-			print("MOTD", green, "~s~n", [Trail]),
-			#raw{data=Str};
+		"372"  -> #motd{message=Trail};
 		
 		% Start of MOTD
 		"375" -> #raw{data=Str};
@@ -90,17 +87,11 @@ lineParse(Str) ->
 		% End of MOTD
 		"376" -> #raw{data=Str};
 		%welcome
-		"001" -> 
-			print("INFO(001)", blue, "~s~n", [Trail]), 
-			#raw{data=Str};
+		"001" -> #raw{data=Str, trail=Trail};
 		%welcome
-		"002" -> 
-			print("INFO(002)", blue, "~s~n", [Trail]), 
-			#raw{data=Str};
+		"002" -> #raw{data=Str, numbercode=Command, trail=Trail};
 		%welcome
-		"003" -> 
-			print("INFO(003)", blue, "~s~n", [Trail]),
-			#raw{data=Str};
+		"003" -> #raw{data=Str, numbercode=Command, trail=Trail};
 		%RPL_MYINFO
 		"004" ->
 			print("INFO(004)", blue, "~s~n", [CommandsAndParams]),
@@ -108,7 +99,7 @@ lineParse(Str) ->
 			settingsServer:setValue(settings, server_version, lists:nth(3, Params)),
 			settingsServer:setValue(settings, user_modes, lists:nth(4, Params)),
 			settingsServer:setValue(settings, chan_modes, lists:nth(5, Params)),
-			#raw{data=Str};
+			#raw{data=Str, numbercode=Command, trail=Trail)};
 			%TODO: this in incomplete for some servers
 
 		% Server options
@@ -150,7 +141,6 @@ lineParse(Str) ->
 		"TOPIC" -> 
 			Channel = lists:nth(1, Params),
 			OldTopic = getChanInfo(Channel, topic),
-			print("TOPIC", green, "~s set topic of ~s to '~s'", [Nick, Channel, Trail]),
 			storeChanInfo(Channel, topic, Trail),
 			#topic{channel=Channel, old_topic=OldTopic, new_topic=Trail, setby=Nick};
 		
