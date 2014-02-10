@@ -51,7 +51,7 @@ start() ->
 	% Send module registrations
 	%parserPid ! #registerPlugin{name="earlAdminPlugin"},
 	gen_event:add_handler(irc_messages, earlAdminPlugin, []),
-	parserPid ! #registerPlugin{name="optimusPrime"},
+	gen_event:add_handler(irc_messages, optimusPrime, []),
 	parserPid ! #registerPlugin{name="telnet"},
 	parserPid ! #registerPlugin{name="reminder"},
 	%parserPid ! #registerPlugin{name="ircTime"}.
