@@ -1,6 +1,6 @@
 -module(optimusPrime).
 -behaviour(gen_event).
--export([init/1, handle_event/2, terminate/2]).
+-export([init/1, handle_event/2, handle_call/3, terminate/2]).
 -export([handle_info/2, code_change/3]).
 -export([primesTo/2, isPrime/2, get_Integer/1]).
 
@@ -29,6 +29,9 @@ terminate(_Args, _State) ->
 
 handle_info({'EXIT', _Pid, _Reason}, State) ->
     {ok, State}.
+
+handle_call(_Request, _From, State) ->
+	{ok, State}.
 
 code_change(_OldVsn, State, _Extra) ->
     {ok, State}.
