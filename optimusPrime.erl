@@ -39,16 +39,17 @@ code_change(_OldVsn, State, _Extra) ->
 % prints all the primes before K
 primesTo(send, {K, From, Target}) ->
 	N = get_Integer(K),
+	io:format("~p~n", [N]),
 	Primes = if
 		N<0 ->
 			"Input Error";
 		N>600 ->
-			"Input too large";
+			"Input too Large";
 		true ->
 			primesTo(N)
 	end,
         if
-		Primes == "Input Error" ->
+		(Primes == "Input Error") or (Primes == "Input too Large") ->
 			PrintTerm = From ++ ": " ++ Primes;
 		true ->
 			PrintTerm = From ++ ": " ++ io_lib:format("~w",[Primes])
@@ -98,6 +99,7 @@ sieve(N, [_|Tail]) ->
 	sieve(N, Tail).
 
 % uses the seive method to find every prime below the specified number
+primesTo(N) when N < 2 -> [];
 primesTo(N) -> 
 	primesTo(N, 3, [2]).
 primesTo(N, T, Primes) when T > N-> 
