@@ -133,6 +133,12 @@ isPrime(N) -> notDevisableBy(N, 3).
 %
 % =============================================================================
 
+getPrimes_test_() ->
+	KnownPrimes =  [2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71, 73, 79, 83, 89, 97, 101],
+	[
+		?_assertEqual(KnownPrimes, primesTo(102)),
+	].
+
 get_number_test_() ->
 	[
 		?_assertEqual(
