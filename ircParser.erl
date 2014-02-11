@@ -99,7 +99,7 @@ lineParse(Str) ->
 			settingsServer:setValue(settings, server_version, lists:nth(3, Params)),
 			settingsServer:setValue(settings, user_modes, lists:nth(4, Params)),
 			settingsServer:setValue(settings, chan_modes, lists:nth(5, Params)),
-			#raw{data=Str, numbercode=Command, trail=Trail)};
+			#raw{data=Str, numbercode=Command, trail=Trail};
 			%TODO: this in incomplete for some servers
 
 		% Server options
