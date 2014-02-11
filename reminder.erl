@@ -43,6 +43,8 @@ code_change(_OldVsn, State, _Extra) ->
 
 % sends a message to To after Time seconds.
 echoIn(Time, {To, Target}) ->
+	{H, M, S} = secsToTimeStamp(Time),
+	sendPid ! #privmsg{from=To, target=Target, message=To ++ ": Setting a timer for " ++ io_lib:format("~ph, ~pm, and ~ps from now", [H, M, S])},
 	timer:sleep(Time * 1000),
 	sendPid ! #privmsg{from=To, target=Target, message=To ++ ": Your timer is up!"}.
 
