@@ -1,7 +1,7 @@
 -define(HOSTNAME, "irc.cs.kent.ac.uk").
 -define(PORT, 6667).
 
--define(NICK, "Earl").
+-define(NICK, "MexEarl").
 -define(USER, "Tatskaari Sir_Earl Sir_Earl Sir_Earl").
 -define(COLORS, true).
 -define(AUTOJN, ["#bottesting"]).

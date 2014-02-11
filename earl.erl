@@ -49,12 +49,12 @@ start() ->
 	settingsServer:setValue(settings, admins, ["graymalkin", "Tatskaari", "Mex", "xand", "Tim"]),
 
 	% Send module registrations
+	parserPid ! #registerPlugin{name="logger"},
 	parserPid ! #registerPlugin{name="earlAdminPlugin"},
 	parserPid ! #registerPlugin{name="optimusPrime"},
 	parserPid ! #registerPlugin{name="telnet"},
 	parserPid ! #registerPlugin{name="reminder"},
-	parserPid ! #registerPlugin{name="ircTime"},
-	parserPid ! #registerPlugin{name="logger"}.
+	parserPid ! #registerPlugin{name="ircTime"}.
 
 getLine(A) ->
 	Index = string:str(A, "\n"),

@@ -104,27 +104,34 @@ lineParse(Str) ->
 			%TODO: this in incomplete for some servers
 
 		% Server options
-		"005" -> print("SERV(005)", green, "~s~n", [Trail]), {};
+		"005" ->  #raw{data=Str, trail=Trail, numbercode=Command};
 
 		% Server users
-		"251" -> print("USERS", green, "~s~n", [Trail]), {};
-		"252" -> print("USERS", green, "~s~n", [Trail]), {};
-		"254" -> print("USERS", green, "~s~n", [Trail]), {};
-		"255" -> print("USERS", green, "~s~n", [Trail]), {};
-		"265" -> print("USERS", green, "~s~n", [Trail]), {};
-		"266" -> print("USERS", green, "~s~n", [Trail]), {};
+		% RPL_LUSERCLIENT :There are <int> users and <int> invisible on <int> servers
+		"251" -> #raw{data=Str, trail=Trail, numbercode=Command};
+		% RPL_LUSEROP Number of Ops online <int> :<info>
+		"252" -> #raw{data=Str, trail=Trail, numbercode=Command};
+		% RPL_LUSERCHANNELS Number of Channels formed <int> :<info>
+		"254" -> #raw{data=Str, trail=Trail, numbercode=Command};
+		% RPL_LUSERME Information about local connections; Text may vary.
+		"255" -> #raw{data=Str, trail=Trail, numbercode=Command};
+		"265" -> #raw{data=Str, trail=Trail, numbercode=Command};
+		"266" -> #raw{data=Str, trail=Trail, numbercode=Command};
 
 		% Channel join
 		"JOIN" -> 
 			print("JOIN", green, "~s joined ~s~n", [Nick, Trail]),
 			storeChanInfo(Trail, name, Trail),
 			{};
+		% RPL_TOPIC
 		"332"  ->
 			print("JOIN", green, "Topic: ~s~n", [Trail]), 
 			ChannelName = lists:nth(1, Params),
 			storeChanInfo(ChannelName, topic, Trail),
 			{};
+		%RPL_TOPICWHOTIME
 		"333"  -> print("JOIN", green, "Topic set by ~s at ~s~n", [lists:nth(3, Params), msToDate(lists:nth(4, Params)) ]), {};
+		%PL_NAMREPLY
 		"353"  -> print("JOIN", green, "Users: ~s~n", [Trail]), {};
 		"366"  -> print("JOIN", green, "End of users list~n", []), {};
 	        

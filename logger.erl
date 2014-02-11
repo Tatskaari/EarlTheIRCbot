@@ -28,7 +28,14 @@ handle_event(#raw{data=Data, numbercode=NumberCode, trail=Trail}, State) ->
 	case NumberCode of
 		"001" -> print("INFO(001)", blue, "~s~n", [Trail]); 
 		"002" -> print("INFO(002)", blue, "~s~n", [Trail]); 
-		"003" -> print("INFO(003)", blue, "~s~n", [Trail]); 
+		"003" -> print("INFO(003)", blue, "~s~n", [Trail]);
+		"005" -> print("SERV(005)", green, "~s~n", [Trail]),
+		"251" -> print("USERS(251)", green, "~s~n", [Trail]);
+		"252" -> print("USERS(252)", green, "~s~n", [Trail]);
+		"254" -> print("USERS(254)", green, "~s~n", [Trail]);
+		"255" -> print("USERS(255)", green, "~s~n", [Trail]);
+		"265" -> print("USERS(265)", green, "~s~n", [Trail]);
+		"266" -> print("USERS(266)", green, "~s~n", [Trail]);
 		_Other -> false
 	end,
 	{ok, State};
