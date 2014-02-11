@@ -2,7 +2,7 @@
 -behaviour(gen_event).
 -export([init/1, handle_event/2]).
 -export([handle_info/2, code_change/3]).
--export([secsToTimeStamp/1]).
+-export([secsToTimeStamp/1, token/2]).
 
 % test test test
 %-include_lib("eunit/include/eunit.hrl").
@@ -43,6 +43,8 @@ code_change(_OldVsn, State, _Extra) ->
 
 % sends a message to To after Time seconds.
 echoIn(Time, {To, Target}) ->
+	{H, M, S} = secsToTimeStamp(Time),
+	sendPid ! #privmsg{from=To, target=Target, message=To ++ ": Setting a timer for " ++ io_lib:format("~ph, ~pm, and ~ps from now", [H, M, S])},
 	timer:sleep(Time * 1000),
 	sendPid ! #privmsg{from=To, target=Target, message=To ++ ": Your timer is up!"}.
 
@@ -95,10 +97,20 @@ dateParser(String) ->
 	TimeTuple = timeStringToTuple(Time),
 	case {validDate(DateTuple), validTime(TimeTuple)} of
 		{true, true} ->
-			{calendar:datetime_to_gregorian_seconds({DateTuple, TimeTuple}), Reminder};
+			{calendar:datetime_to_gregorian_seconds({DateTuple, TimeTuple}), 
+				case Reminder of
+					"" -> "reminder";
+					_ -> Reminder
+				end
+			};
 		{false, true} ->
 			{CurrentDate, _} = erlang:localtime(),
-			{calendar:datetime_to_gregorian_seconds({CurrentDate, TimeTuple}), Rest};
+			{calendar:datetime_to_gregorian_seconds({CurrentDate, TimeTuple}), 
+				case Reminder of
+					"" -> "reminder";
+					_ -> Reminder
+				end
+			};
 		_ ->
 			error
 			
@@ -134,7 +146,7 @@ token(String, Splitter) ->
 	P = string:str(String, Splitter),
 	if
 		P<1 ->
-			{"", String};
+			{String, ""};
 		true ->
 			{string:substr(String, 1, P-1), string:substr(String, P+1)}
 	end.
