@@ -71,9 +71,7 @@ lineParse(Str) ->
 	case Command of
 		"PRIVMSG" -> 
 			Target = lists:nth(1, Params),
-			#privmsg{target=lists:nth(1, Params), from=Nick,  admin=IsAdmin, message=Trail};	     
-		"PING" -> #ping{nonce=Trail};
-
+			#privmsg{target=Target, from=Nick,  admin=IsAdmin, message=Trail};	     
 		"PING" -> #ping{nonce=Trail};
 		"MODE" -> #mode{modes=Trail};
 		"NOTICE" -> #notice{target=lists:nth(1, Params), message=Trail};
@@ -94,12 +92,15 @@ lineParse(Str) ->
 		"003" -> #raw{data=Str, numbercode=Command, trail=Trail};
 		%RPL_MYINFO
 		"004" ->
-			print("INFO(004)", blue, "~s~n", [CommandsAndParams]),
+			Server_name = lists:nth(2, Params),
+			Server_version = lists:nth(3, Params),
+			User_modes = lists:nth(4, Params),
+			Chan_modes = lists:nth(5, Params),
 			settingsServer:setValue(settings, server_name, lists:nth(2, Params)),
 			settingsServer:setValue(settings, server_version, lists:nth(3, Params)),
 			settingsServer:setValue(settings, user_modes, lists:nth(4, Params)),
 			settingsServer:setValue(settings, chan_modes, lists:nth(5, Params)),
-			#raw{data=Str, numbercode=Command, trail=Trail)};
+			#rpl_myinfo{server_name=Server_name, server_version=Server_version, user_modes=User_modes, chan_modes=Chan_modes};
 			%TODO: this in incomplete for some servers
 
 		% Server options

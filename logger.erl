@@ -33,6 +33,13 @@ handle_event(#raw{data=Data, numbercode=NumberCode, trail=Trail}, State) ->
 	end,
 	{ok, State};
 
+handle_event(#rpl_myinfo{server_name=Server_name, server_version=Server_version, user_modes=User_modes, chan_modes=Chan_modes}, State) ->
+	print("INFO(004)", blue, "Server Name is '~s'~n", [Server_name]),
+	print("INFO(004)", blue, "Server Version is '~s'~n", [Server_version]),
+	print("INFO(004)", blue, "User Modes [~s]~n", [User_modes]),
+	print("INFO(004)", blue, "Channel Modes[~s]~n", [Chan_modes]),
+	{ok, State};
+
 handle_event(_Msg, State) ->
 	{ok, State}.
 

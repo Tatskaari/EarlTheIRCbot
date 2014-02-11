@@ -12,6 +12,7 @@
 -record(mode, {modes}).
 -record(topic, {channel, old_topic, new_topic, setby}).
 -record(motd, {message}).
+-record(rpl_myinfo,{server_name, server_version, user_modes, chan_modes}).
 
 -record(notice, {target, message}).
 
