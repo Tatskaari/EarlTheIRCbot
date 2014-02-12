@@ -22,7 +22,7 @@ parse(PluginsNames) ->
 
     	% deal with registerPlugin requests by adding them to the chan list
 		#registerPlugin{name=Name} ->
-			io:format("adding plugin '~s'", [Name]),
+			io:format("adding plugin '~s'~n", [Name]),
 			NameAttom = list_to_atom(Name),
 			gen_event:add_handler(irc_messages, NameAttom, []),
 			?MODULE:parse([Name|PluginsNames]);
