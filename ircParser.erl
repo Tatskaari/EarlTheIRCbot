@@ -120,27 +120,28 @@ lineParse(Str) ->
 
 		% Channel join
 		"JOIN" -> 
-			print("JOIN", green, "~s joined ~s~n", [Nick, Trail]),
 			storeChanInfo(Trail, name, Trail),
-			{};
+			#join{channel=Trail, nick=Nick};
 		% RPL_TOPIC
 		"332"  ->
-			print("JOIN", green, "Topic: ~s~n", [Trail]), 
 			ChannelName = lists:nth(1, Params),
 			storeChanInfo(ChannelName, topic, Trail),
-			{};
+			#rpl_topic{channel=ChannelName, topic=Trail};
 		%RPL_TOPICWHOTIME
-		"333"  -> print("JOIN", green, "Topic set by ~s at ~s~n", [lists:nth(3, Params), msToDate(lists:nth(4, Params)) ]), {};
+		"333"  -> 
+			Channel = lists:nth(2, Params), %TODO check this
+			SetBy = lists:nth(3, Params),
+			Date = msToDate(lists:nth(4, Params)),
+			#rpl_topicwhotime{channel=Channel, date=Date, nick=SetBy};
 		%PL_NAMREPLY
-		"353"  -> print("JOIN", green, "Users: ~s~n", [Trail]), {};
-		"366"  -> print("JOIN", green, "End of users list~n", []), {};
+		"353"  -> #raw{data=Str, trail=Trail, numbercode=Command};
+		"366"  -> #raw{data=Str, trail=Trail, numbercode=Command};
 	        
 	        % Nick
-	        "NICK" -> print("NICK", blue, "~s changed to ~s~n", [Nick, Trail]),
-				#nick{nick={Nick,Trail}};
+	        "NICK" -> #nick{nick={Nick,Trail}};
 
 		% Part
-		"PART" -> print("PART", green, "~s parted ~s~n", [Nick, lists:nth(1, Params)]), {};
+		"PART" -> #part{nick=Nick, channel=lists:nth(1,Params)};
 
 		% Quits
 		"QUIT" -> print("QUIT", green, "~s quit (~s)~n", [Nick, Trail]), {};

@@ -6,13 +6,15 @@
 -record(pong, {nonce}).
 -record(user, {user}).
 -record(nick, {nick}).
--record(join, {channel}).
--record(part, {channel}).
+-record(join, {channel, nick}).
+-record(part, {channel, nick}).
 -record(quit, {reason}).
 -record(mode, {modes}).
 -record(topic, {channel, old_topic, new_topic, setby}).
 -record(motd, {message}).
 -record(rpl_myinfo,{server_name, server_version, user_modes, chan_modes}).
+-record(rpl_topic, {channel, topic}).
+-record(rpl_topicwhotime, {channel, date, nick}).
 
 -record(notice, {target, message}).
 
