@@ -12,7 +12,7 @@ main() ->
 	register(connectPid, spawn(earlConnection, connect, [?HOSTNAME, ?PORT])),
 	register(parserPid, spawn(messageRouter, parse, [])),
 	register(mainPid, self()),
-	{ok, SettingsPid} = settingsServer:start_link(),
+	{ok, SettingsPid} = settingsServer:start_link("settings.db"),
 	{ok, ChanInfoPid} = settingsServer:start_link(),
 	register(settings, SettingsPid),
 	register(channel_info, ChanInfoPid),
