@@ -26,9 +26,6 @@ main() ->
 		connected -> true
 	end,
 
-	sendPid ! #user{user=?USER},
-	sendPid ! #nick{nick=?NICK},
-
 	JoinChan = fun(Chan) -> sendPid ! #join{channel=Chan} end,
 	lists:foreach(JoinChan, ?AUTOJN),
 	
@@ -50,6 +47,7 @@ start() ->
 
 	% Send module registrations
 	parserPid ! #registerPlugin{name="logger"},
+	parserPid ! #registerPlugin{name="ircSetup"},
 	parserPid ! #registerPlugin{name="earlAdminPlugin"},
 	parserPid ! #registerPlugin{name="optimusPrime"},
 	parserPid ! #registerPlugin{name="telnet"},

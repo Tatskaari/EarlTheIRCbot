@@ -44,29 +44,24 @@ parse(PluginsNames) ->
 
 		T->
 			Line = lineParse(T),
+			gen_event:notify(irc_messages, Line),
+
+			% Built in commands which are required for the protocol
 			case Line of
-				{} -> false;
-				_A ->
-					gen_event:notify(irc_messages, Line),
-					% Anonnomous function (F) to send line to every registered plugin
+				% Ping
+				#ping{nonce=K} ->
+					sendPid ! #pong{nonce=K};
 
-					% Built in commands which are required for the protocol
-					case Line of
-						% Ping
-						#ping{nonce=K} ->
-							sendPid ! #pong{nonce=K};
+				#privmsg{from=From, target=To, message="#plugins"} ->
+					io:format("~p~p~n~p~n", [To, From, Line]),
+					ListPlugins = fun(Chan) ->
+						M = io_lib:format("~p", [Chan]),
+						sendPid ! #privmsg{target=To, message=("Plugin: " ++ M)}
+					end,
+					lists:foreach(ListPlugins, PluginsNames);
 
-						#privmsg{from=From, target=To, message="#plugins"} ->
-							io:format("~p~p~n~p~n", [To, From, Line]),
-							ListPlugins = fun(Chan) ->
-								M = io_lib:format("~p", [Chan]),
-								sendPid ! #privmsg{target=To, message=("Plugin: " ++ M)}
-							end,
-							lists:foreach(ListPlugins, PluginsNames);
-
-						% We don't know about everything - let's not deal with it.	
-						_Default -> false 
-					end
+				% We don't know about everything - let's not deal with it.	
+				_Default -> false 
 			end
     end,
     ?MODULE:parse(PluginsNames).
