@@ -26,9 +26,6 @@ main() ->
 		connected -> true
 	end,
 
-	JoinChan = fun(Chan) -> sendPid ! #join{channel=Chan} end,
-	lists:foreach(JoinChan, ?AUTOJN),
-	
 	% Wait until a process wants to kill the program and then tell all processes to an hero 
 	receive
 		die ->
@@ -46,13 +43,7 @@ start() ->
 	settingsServer:setValue(settings, admins, ["graymalkin", "Tatskaari", "Mex", "xand", "Tim"]),
 
 	% Send module registrations
-	parserPid ! #registerPlugin{name="logger"},
-	parserPid ! #registerPlugin{name="ircSetup"},
-	parserPid ! #registerPlugin{name="earlAdminPlugin"},
-	parserPid ! #registerPlugin{name="optimusPrime"},
-	parserPid ! #registerPlugin{name="telnet"},
-	parserPid ! #registerPlugin{name="reminder"},
-	parserPid ! #registerPlugin{name="ircTime"}.
+	lists:foreach(fun(Plugin) -> parserPid ! #registerPlugin{name=Plugin} end, ?PLUGINS).
 
 getLine(A) ->
 	Index = string:str(A, "\n"),

@@ -6,6 +6,9 @@
 -define(COLORS, true).
 -define(AUTOJN, ["#bottesting"]).
 
+-define(PLUGINS, ["logger", "ircSetup", "earlAdminPlugin", "optimusPrime", "telnet", "reminder", "ircTime"]).
+
+
 -record(getVal, {name, return_chan}).
 -record(noVal, {name}).
 -record(retVal, {name, value}).
