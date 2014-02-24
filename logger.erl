@@ -9,23 +9,24 @@ init(_Args) ->
 	{ok, []}.
 
 handle_event(#privmsg{target=Target, from=From, message=Message}, State) ->
-	print("PRIVMSG", blue, "[~s -> ~s]: ~s~n", [From, Target, Message]),
-	{ok, State};
+	OK = print("PRIVMSG", blue, "[~s -> ~s]: ~s~n", [From, Target, Message]),
+	{OK, State};
 
 handle_event(#notice{target=_Target, message=Message}, State) ->
-	print("NOTICE", blue, "~s~n", [Message]),
-	{ok, State};
+	OK = print("NOTICE", blue, "~s~n", [Message]),
+	{OK, State};
 
 handle_event(#motd{message=Message}, State) ->
-	print("MOTD", green, "~s~n", [Message]),
-	{ok, State};
+	OK =print("MOTD", green, "~s~n", [Message]),
+	{OK, State};
 
 handle_event(#topic{channel=Channel, old_topic=OldTopic, new_topic=NewTopic, setby=Nick}, State) ->
-	print("TOPIC", green, "~s set topic of ~s to '~s'", [Nick, Channel, NewTopic]),
-	{ok, State};
+	OK = print("TOPIC", green, "~s set topic of ~s to '~s'", [Nick, Channel, NewTopic]),
+	{OK, State};
 
-handle_event(#raw{data=Data, numbercode=NumberCode, trail=Trail}, State) ->
-	case NumberCode of
+
+handle_event(#raw{data=Data, number_code=NumberCode, trail=Trail}, State) ->
+	OK = case NumberCode of
 		"001" -> print("INFO(001)", blue, "~s~n", [Trail]);
 		"002" -> print("INFO(002)", blue, "~s~n", [Trail]);
 		"003" -> print("INFO(003)", blue, "~s~n", [Trail]);
@@ -38,9 +39,11 @@ handle_event(#raw{data=Data, numbercode=NumberCode, trail=Trail}, State) ->
 		"266" -> print("USERS(266)", green, "~s~n", [Trail]);
 		"353" -> print("JOIN", green, "Users: ~s~n", [Trail]);
 		"366" -> print("JOIN", green, "End of users list~n", []);
-		_Other -> print("WARNING", yellow, "Unknown number code '~s'~n", [NumberCode]);
+		"433" -> print("ERROR", red, "Nick already in use.~n", []);
+		"436" -> print("ERROR", red, "Nick collision.~n", []);
+		_Other -> print("WARNING", yellow, "Unknown number code '~s'~n	*~s~n", [NumberCode, Data])
 	end,
-	{ok, State};
+	{OK, State};
 
 handle_event(#rpl_myinfo{server_name=Server_name, server_version=Server_version, user_modes=User_modes, chan_modes=Chan_modes}, State) ->
 	print("INFO(004)", blue, "Server Name is '~s'~n", [Server_name]),
@@ -61,13 +64,18 @@ handle_event(#rpl_topicwhotime{channel=Channel, date=Date, nick=Nick}, State) ->
 	print("JOIN", green, "Topic of ~n set by ~s at ~s~n", [Channel, Nick, Date]),
 	{ok, State};
 
-handle_event(#nick{nick={Old, New}}, Status) ->
+handle_event(#nick{nick={Old, New}}, State) ->
 	print("NICK", blue, "~s changed to ~s~n", [Old, New]),
 	{ok, State};
 
-handle_event(#part{nick=Nick, channel=Channel) ->
+handle_event(#part{nick=Nick, channel=Channel}, State) ->
 	print("PART", green, "~s parted ~s~n", [Nick, Channel]),
 	{ok, State};
+
+handle_event(#quit{nick=Nick, reason=Reason}, State) ->
+	print("QUIT", green, "~s quit (~s)~n", [Nick, Reason]),
+	{ok, State};
+
 
 handle_event(_Msg, State) ->
 	{ok, State}.

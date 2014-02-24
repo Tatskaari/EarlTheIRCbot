@@ -1,14 +1,14 @@
 % Records for the various types of message that can be sent
 -record(privmsg, {target, from, admin, message}).
 -record(command, {command, data}).
--record(raw, {data, numbercode, trail}).
+-record(raw, {data, number_code, trail}).
 -record(ping, {nonce}).
 -record(pong, {nonce}).
 -record(user, {user}).
 -record(nick, {nick}).
 -record(join, {channel, nick}).
 -record(part, {channel, nick}).
--record(quit, {reason}).
+-record(quit, {reason, nick}).
 -record(mode, {modes}).
 -record(topic, {channel, old_topic, new_topic, setby}).
 -record(motd, {message}).

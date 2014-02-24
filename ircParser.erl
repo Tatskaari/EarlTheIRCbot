@@ -67,7 +67,6 @@ lineParse(Str) ->
 	{Command, Params} = getCommand(CommandsAndParams),
 	Nick = getNick(Prefix),
 	IsAdmin = isAdmin(Nick, getAdmins()),
-
 	case Command of
 		"PRIVMSG" -> 
 			Target = lists:nth(1, Params),
@@ -80,16 +79,16 @@ lineParse(Str) ->
 		"372"  -> #motd{message=Trail};
 		
 		% Start of MOTD
-		"375" -> #raw{data=Str};
+		"375" -> #raw{data=Str, number_code=Command};
 			
 		% End of MOTD
-		"376" -> #raw{data=Str};
+		"376" -> #raw{data=Str, number_code=Command};
 		%welcome
-		"001" -> #raw{data=Str, trail=Trail};
+		"001" -> #raw{data=Str, trail=Trail, number_code=Command};
 		%welcome
-		"002" -> #raw{data=Str, numbercode=Command, trail=Trail};
+		"002" -> #raw{data=Str, number_code=Command, trail=Trail};
 		%welcome
-		"003" -> #raw{data=Str, numbercode=Command, trail=Trail};
+		"003" -> #raw{data=Str, number_code=Command, trail=Trail};
 		%RPL_MYINFO
 		"004" ->
 			Server_name = lists:nth(2, Params),
@@ -104,19 +103,19 @@ lineParse(Str) ->
 			%TODO: this in incomplete for some servers
 
 		% Server options
-		"005" ->  #raw{data=Str, trail=Trail, numbercode=Command};
+		"005" ->  #raw{data=Str, trail=Trail, number_code=Command};
 
 		% Server users
 		% RPL_LUSERCLIENT :There are <int> users and <int> invisible on <int> servers
-		"251" -> #raw{data=Str, trail=Trail, numbercode=Command};
+		"251" -> #raw{data=Str, trail=Trail, number_code=Command};
 		% RPL_LUSEROP Number of Ops online <int> :<info>
-		"252" -> #raw{data=Str, trail=Trail, numbercode=Command};
+		"252" -> #raw{data=Str, trail=Trail, number_code=Command};
 		% RPL_LUSERCHANNELS Number of Channels formed <int> :<info>
-		"254" -> #raw{data=Str, trail=Trail, numbercode=Command};
+		"254" -> #raw{data=Str, trail=Trail, number_code=Command};
 		% RPL_LUSERME Information about local connections; Text may vary.
-		"255" -> #raw{data=Str, trail=Trail, numbercode=Command};
-		"265" -> #raw{data=Str, trail=Trail, numbercode=Command};
-		"266" -> #raw{data=Str, trail=Trail, numbercode=Command};
+		"255" -> #raw{data=Str, trail=Trail, number_code=Command};
+		"265" -> #raw{data=Str, trail=Trail, number_code=Command};
+		"266" -> #raw{data=Str, trail=Trail, number_code=Command};
 
 		% Channel join
 		"JOIN" -> 
@@ -134,8 +133,8 @@ lineParse(Str) ->
 			Date = msToDate(lists:nth(4, Params)),
 			#rpl_topicwhotime{channel=Channel, date=Date, nick=SetBy};
 		%PL_NAMREPLY
-		"353"  -> #raw{data=Str, trail=Trail, numbercode=Command};
-		"366"  -> #raw{data=Str, trail=Trail, numbercode=Command};
+		"353"  -> #raw{data=Str, trail=Trail, number_code=Command};
+		"366"  -> #raw{data=Str, trail=Trail, number_code=Command};
 	        
 	        % Nick
 	        "NICK" -> #nick{nick={Nick,Trail}};
@@ -144,7 +143,7 @@ lineParse(Str) ->
 		"PART" -> #part{nick=Nick, channel=lists:nth(1,Params)};
 
 		% Quits
-		"QUIT" -> print("QUIT", green, "~s quit (~s)~n", [Nick, Trail]), {};
+		"QUIT" -> #quit{reason=Trail, nick=Nick};
 
 		%topic
 		"TOPIC" -> 
@@ -154,12 +153,12 @@ lineParse(Str) ->
 			#topic{channel=Channel, old_topic=OldTopic, new_topic=Trail, setby=Nick};
 		
 		% Nick already in use
-		"433" -> print("ERROR", red, "Nick already in use.", []), {};
+		"433" ->
+			#raw{data=Str, trail=Trail, number_code=Command};
 
-		"436" -> print("ERROR", red, "Nick collision.", []), {};
 
 		% Unknown commands
-		_A -> print("WARN", yellow, "Un-recognised command '~s': '~s'~n", [Command, Str]), {}
+		_A -> #raw{data=Str, trail=Trail, number_code=Command}
 	end.
 
 storeChanInfo(ChannelName, Param, Data) ->
