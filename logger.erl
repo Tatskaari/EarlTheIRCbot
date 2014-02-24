@@ -20,6 +20,10 @@ handle_event(#motd{message=Message}, State) ->
 	OK =print("MOTD", green, "~s~n", [Message]),
 	{OK, State};
 
+handle_event(#ping{nonce=Nonce}, State) ->
+	OK =print("PING", white, "~s~n", [Nonce]),
+	{OK, State};
+
 handle_event(#topic{channel=Channel, old_topic=OldTopic, new_topic=NewTopic, setby=Nick}, State) ->
 	OK = print("TOPIC", green, "~s set topic of ~s to '~s'", [Nick, Channel, NewTopic]),
 	{OK, State};
@@ -30,7 +34,7 @@ handle_event(#raw{data=Data, number_code=NumberCode, trail=Trail}, State) ->
 		"001" -> print("INFO(001)", blue, "~s~n", [Trail]);
 		"002" -> print("INFO(002)", blue, "~s~n", [Trail]);
 		"003" -> print("INFO(003)", blue, "~s~n", [Trail]);
-		"005" -> print("SERV(005)", green, "~s~n", [Trail]);
+		"005" -> print("SERV(005)", green, "~s~n", [Data]);
 		"251" -> print("USERS(251)", green, "~s~n", [Trail]);
 		"252" -> print("USERS(252)", green, "~s~n", [Trail]);
 		"254" -> print("USERS(254)", green, "~s~n", [Trail]);
