@@ -37,7 +37,6 @@ parse(PluginsNames) ->
 				
 			        % Remove the event
 				K = gen_event:delete_handler(irc_messages, list_to_atom(Name), []),
-				io:format("~p", [K]),
 				% Remove from the list of plugins
 				?MODULE:parse(PluginsNames -- [Name]);
 			    true ->
