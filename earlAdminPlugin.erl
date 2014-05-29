@@ -7,7 +7,7 @@
 init(_Args) ->
 	{ok, []}.
 
-handle_event(#privmsg{admin=true, message="#n " ++ Nick}, State) ->
+handle_event(#privmsg{admin=true, message="#n" ++ Nick}, State) ->
 	sendPid ! #nick{nick=Nick},
 	{ok, State};
 
