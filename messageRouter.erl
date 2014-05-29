@@ -23,8 +23,8 @@ parse(PluginsNames) ->
         % deal with registerPlugin requests by adding them to the chan list
 	#registerPlugin{name=Name} ->
 	    io:format("adding plugin '~s'~n", [Name]),
-	    NameAttom = list_to_atom(Name),
-	    gen_event:add_handler(irc_messages, NameAttom, []),
+	    NameAtom = list_to_atom(Name),
+	    gen_event:add_handler(irc_messages, NameAtom, []),
 	    ?MODULE:parse([Name|PluginsNames]);
 	
 	% deregister plugins
@@ -33,7 +33,12 @@ parse(PluginsNames) ->
 	    F = fun(N) ->
 			if
 			    N == Name -> 
-				gen_event:delete_handler(error_man, terminal_logger, []),
+				%gen_event:delete_handler(error_man, terminal_logger, []),
+				
+			        % Remove the event
+				K = gen_event:delete_handler(irc_messages, list_to_atom(Name), []),
+				io:format("~p", [K]),
+				% Remove from the list of plugins
 				?MODULE:parse(PluginsNames -- [Name]);
 			    true ->
 				false
