@@ -127,11 +127,11 @@ lineParse(Str) ->
 			storeChanInfo(ChannelName, topic, Trail),
 			#rpl_topic{channel=ChannelName, topic=Trail};
 		%RPL_TOPICWHOTIME
-		"333"  -> 
-			Channel = lists:nth(2, Params), %TODO check this
-			SetBy = lists:nth(3, Params),
-			Date = msToDate(lists:nth(4, Params)),
-			#rpl_topicwhotime{channel=Channel, date=Date, nick=SetBy};
+		%"333"  -> 
+		%	Channel = lists:nth(2, Params), %TODO check this
+		%	SetBy = lists:nth(3, Params),
+		%	Date = msToDate(lists:nth(4, Params)),
+		%	#rpl_topicwhotime{channel=Channel, date=Date, nick=SetBy};
 		%PL_NAMREPLY
 		"353"  -> #raw{data=Str, trail=Trail, number_code=Command};
 		"366"  -> #raw{data=Str, trail=Trail, number_code=Command};
