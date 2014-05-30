@@ -42,7 +42,9 @@ start(_Type, _Args) ->
 
 	% Wait until a process wants to kill the program and then tell all processes to an hero 
         %% TODO: Move the close code into stop/1
-    earl_sup:start_link().
+    K = earl_sup:start_link(),
+    io:format("~p~n", [K]),
+    K.
 
 setup() ->
 	% Set up admin list
