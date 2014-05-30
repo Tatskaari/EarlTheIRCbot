@@ -2,7 +2,8 @@
  [{description, "Erlang based IRC Bot"},
   {vsn, "1"},
   {modules, []},
-  {registered, [sendPid, bufferPid, connectPid, parserPid, mainPid, settings, channel_info]},
+  %%{registered, [sendPid, bufferPid, connectPid, parserPid, mainPid, settings, channel_info]},
+  {registered, []},
   {applications, [
   		 kernel, 
 		 stdlib
