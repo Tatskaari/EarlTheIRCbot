@@ -7,7 +7,7 @@
 init(_Args) ->
 	{ok, []}.
 
-handle_event(#privmsg{admin=true, message="#n" ++ Nick}, State) ->
+handle_event(#privmsg{admin=true, message="#n " ++ Nick}, State) ->
 	sendPid ! #nick{nick=Nick},
 	{ok, State};
 
@@ -51,6 +51,12 @@ handle_event(#privmsg{admin=true, from=From, target=To, message="#unload " ++ Mo
 handle_event(#privmsg{admin=true, from=From, target=To, message="#load " ++ ModuleName}, State) ->
 	parserPid ! #registerPlugin{name=ModuleName},
 	sendPid ! #privmsg{from=From, target=To, message=From ++ ": loaded " ++ ModuleName},
+	{ok, State};
+
+% Reloads modules
+handle_event(#privmsg{admin=true, from=From, target=To, message="#reload " ++ ModuleName}, State) ->
+	parserPid ! #reloadPlugin{name=ModuleName},
+	sendPid ! #privmsg{from=From, target=To, message=From ++ ": reloaded " ++ ModuleName},
 	{ok, State};
 
 handle_event(_Msg, State) ->

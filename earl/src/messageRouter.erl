@@ -19,28 +19,18 @@ parse(PluginsNames) ->
 	    io:format("parserPid :: EXIT~n"),
 	    lists:foreach(fun(Name) -> gen_event:delete_handler(irc_messages, Name, []) end, PluginsNames),
 	    exit(self(), normal);
+
+	% Reload plugin...
+	%#reloadPlugin{name=Name} ->
+	%    true;
 						
         % deal with registerPlugin requests by adding them to the chan list
 	#registerPlugin{name=Name} ->
-	    io:format("adding plugin '~s'~n", [Name]),
-	    NameAttom = list_to_atom(Name),
-	    gen_event:add_handler(irc_messages, NameAttom, []),
-	    ?MODULE:parse([Name|PluginsNames]);
+	    ?MODULE:parse([load(Name)|PluginsNames]);
 	
 	% deregister plugins
 	#deregisterPlugin{name=Name} ->
-	    io:format("UNLOADING MODULE : ~s~n", [Name]),
-	    F = fun(N) ->
-			if
-			    N == Name -> 
-				gen_event:delete_handler(error_man, terminal_logger, []),
-				?MODULE:parse(PluginsNames -- [Name]);
-			    true ->
-				false
-			end
-		end,
-	    lists:foreach(F, PluginsNames);
-	
+	    ?MODULE:parse(unload(Name, PluginsNames));
 	
 	T->
 	    Line = lineParse(T),
@@ -65,3 +55,26 @@ parse(PluginsNames) ->
 	    end
     end,
     ?MODULE:parse(PluginsNames).
+
+
+load(Name) ->
+    io:format("adding plugin '~s'~n", [Name]),
+    NameAtom = list_to_atom(Name),
+    gen_event:add_handler(irc_messages, NameAtom, []),
+    Name.
+
+unload(Name, PluginsNames) ->
+    io:format("UNLOADING MODULE : ~s~n", [Name]),
+    F = fun(N) ->
+		if
+		    N == Name -> 
+			% Remove the event
+			gen_event:delete_handler(irc_messages, list_to_atom(Name), []),
+			% Remove from the list of plugins
+			?MODULE:parse(PluginsNames -- [Name]);
+		    true ->
+			false
+		end
+	end,
+    lists:foreach(F, PluginsNames),
+    PluginsNames.

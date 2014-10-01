@@ -20,6 +20,7 @@
 
 -record(registerPlugin, {name}).
 -record(deregisterPlugin, {name}).
+-record(reloadPlugin, {name}).
 
 -record(registerAdmin, {admin}).
 -record(deregisterAdmin, {admin}).

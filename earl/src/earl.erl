@@ -1,12 +1,26 @@
 -module(earl).
--export([main/0, buffer/0,buffer/1, send/1, getLine/1]).
+-export([buffer/0, buffer/1, send/1, getLine/1]).
 -import(messageRouter, [parse/0]).
 -include("ircParser.hrl").
 -include("earl.hrl").
 -include_lib("eunit/include/eunit.hrl").
 
+-behaviour(application).
+
+-export([start/2, stop/1]).
+
+stop(_State) ->
+    bufferPid ! die,
+    parserPid ! die,
+    connectPid ! die,
+    settingsServer:stop(settings),
+    settingsServer:stop(channel_info), % incomplete, this Server has sub servers...
+    io:format("mainPid :: EXIT~n"),
+    exit(self(), normal),
+    ok.
+
 % Spawns the buffer and the connections processes
-main() ->
+start(_Type, _Args) ->
 	% Spawn the processes for connecting and building commmands
 	register(bufferPid, spawn(earl, buffer, [])),        
 	register(connectPid, spawn(earlConnection, connect, [?HOSTNAME, ?PORT])),
@@ -20,25 +34,19 @@ main() ->
 
 	gen_event:start_link({local, irc_messages}),
 	% Start the plugins
-	start(),
+	setup(),
 
 	receive
 		connected -> true
 	end,
 
 	% Wait until a process wants to kill the program and then tell all processes to an hero 
-	receive
-		die ->
-			bufferPid ! die,
-			parserPid ! die,
-			connectPid ! die,
-			settingsServer:stop(settings),
-			settingsServer:stop(channel_info), % incomplete, this Server has sub servers...
-			io:format("mainPid :: EXIT~n"),
-			exit(self(), normal)
-	end.
+        %% TODO: Move the close code into stop/1
+    K = earl_sup:start_link(),
+    io:format("~p~n", [K]),
+    K.
 
-start() ->
+setup() ->
 	% Set up admin list
 	settingsServer:setValue(settings, admins, ["graymalkin", "Tatskaari", "Mex", "xand", "Tim"]),
 
